@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 26%{?dist}
+Release: 28%{?dist}
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedora.redhat.com/wiki/CoolKey 
@@ -53,6 +53,8 @@ Patch20: esc-1.1.0-fix20.patch
 Patch21: esc-1.1.0-fix21.patch
 # Fixes to 981156 and 961582
 Patch22: esc-1.1.0-fix22.patch
+#Fix for #1350146 - Segmentation fault happens when escd runs with a NULL display. 
+Patch23: esc-1.1.0-fix23.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
@@ -129,14 +131,17 @@ cryptographic smartcards.
 %patch20 -p1 -b .fix20
 %patch21 -p1 -b .fix21
 %patch22 -p1 -b .fix22
+%patch23 -p1 -b .fix23
 
 %build
 
-export GECKO_VER=17.0.8
-export GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-$GECKO_VER/sdk
-export GECKO_BIN_PATH=%{_libdir}/xulrunner-devel-$GECKO_VER/bin
-export GECKO_INCLUDE_PATH=/usr/include/xulrunner-$GECKO_VER
-export GECKO_IDL_PATH=/usr/share/idl/xulrunner-$GECKO_VER
+export geckoversion=`rpm -qi xulrunner | grep Version |  sed 's/[\t ]//g;/^$/d' | sed 's/Version://' |  sed 's/Vendor:ScientificLinux//'`
+
+GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-$geckoversion/sdk
+echo $GECKO_SDK_PATH
+GECKO_BIN_PATH=%{_libdir}/xulrunner
+GECKO_INCLUDE_PATH=%{_includedir}/xulrunner-$geckoversion
+GECKO_IDL_PATH=/usr/share/idl/xulrunner-$geckoversion
 
 %ifarch x86_64 ppc64 ia64
 USE_64=1
@@ -263,6 +268,8 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
+* Wed Nov 02 2016 Jack Magne <jmagne@redhat.com>= 1.1.0-28
+- Resolve bug: #Fix for #1350146 - Segmentation fault happens when escd runs with a NULL display. 
 * Tue Aug 13 2013 Jack Magne <jmagne@redhat.com>= 1.1.0-26
 - Resolve bugs #981156 and #961582. One minor permissions issue, the other fix to malformed desktop file.
 * Thu Mar 14 2013  Jack Magne <jmagne@rehdat.com>= 1.1.0-25.1

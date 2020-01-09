@@ -1,0 +1,28 @@
+diff -up ./esc/src/app/daemon/escd.cpp.fix23 ./esc/src/app/daemon/escd.cpp
+--- ./esc/src/app/daemon/escd.cpp.fix23	2016-11-02 10:59:50.290932495 -0700
++++ ./esc/src/app/daemon/escd.cpp	2016-11-02 11:00:04.052840400 -0700
+@@ -406,6 +406,7 @@ int main(int argc, char **argv)
+     if(!display)
+     {
+         PR_LOG( escDLog, PR_LOG_ALWAYS, ("%s Daemon: Error Obtaining X Display! \n",GetTStamp(tBuff,56)));
++        exit(1);
+     }
+ 
+     PR_LOG( escDLog, PR_LOG_ALWAYS, ("%s Daemon: Attempted XOpenDisplay: %p \n",GetTStamp(tBuff,56),display)); 
+diff -up ./esc/src/app/xul/esc/application.ini.fix23 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix23	2016-11-02 11:02:32.972792325 -0700
++++ ./esc/src/app/xul/esc/application.ini	2016-11-02 11:02:44.489710344 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-26
++Version=1.1.0-27
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001026
++BuildID=0000001027
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on

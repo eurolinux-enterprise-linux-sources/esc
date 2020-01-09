@@ -1,6 +1,6 @@
 diff -up ./esc/src/app/xpcom/Makefile.sdk.fix21 ./esc/src/app/xpcom/Makefile.sdk
---- ./esc/src/app/xpcom/Makefile.sdk.fix21	2013-03-18 18:34:05.665894924 -0700
-+++ ./esc/src/app/xpcom/Makefile.sdk	2013-03-18 18:34:05.677950976 -0700
+--- ./esc/src/app/xpcom/Makefile.sdk.fix21	2013-03-13 10:55:29.915092906 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2013-03-13 10:58:11.983544197 -0700
 @@ -112,9 +112,10 @@ endif
  
  ifeq ($(OS_ARCH),Linux)
@@ -14,8 +14,8 @@ diff -up ./esc/src/app/xpcom/Makefile.sdk.fix21 ./esc/src/app/xpcom/Makefile.sdk
  
  ifeq ($(OS_ARCH),WINNT)
 diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix21 ./esc/src/app/xpcom/rhCoolKey.cpp
---- ./esc/src/app/xpcom/rhCoolKey.cpp.fix21	2013-03-18 18:34:05.666893404 -0700
-+++ ./esc/src/app/xpcom/rhCoolKey.cpp	2013-03-18 18:34:05.677950976 -0700
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix21	2013-03-13 11:05:28.592139995 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2013-03-13 11:07:20.576409311 -0700
 @@ -21,7 +21,6 @@
  #include "rhCoolKey.h"
  #include "CoolKey.h"
@@ -280,8 +280,8 @@ diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix21 ./esc/src/app/xpcom/rhCoolKey.c
  
  void rhCoolKey::AddNotifyKeyListener(rhIKeyNotify *listener)
 diff -up ./esc/src/app/xpcom/rhCoolKey.h.fix21 ./esc/src/app/xpcom/rhCoolKey.h
---- ./esc/src/app/xpcom/rhCoolKey.h.fix21	2013-03-18 18:34:05.667939238 -0700
-+++ ./esc/src/app/xpcom/rhCoolKey.h	2013-03-18 18:34:05.677950976 -0700
+--- ./esc/src/app/xpcom/rhCoolKey.h.fix21	2013-03-13 11:05:37.566191254 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.h	2013-03-13 11:07:37.957347843 -0700
 @@ -119,6 +119,7 @@ protected:
      static std::list< nsCOMPtr <rhIKeyNotify> > gNotifyListeners;
  
@@ -291,8 +291,8 @@ diff -up ./esc/src/app/xpcom/rhCoolKey.h.fix21 ./esc/src/app/xpcom/rhCoolKey.h
      rhICoolKey* mProxy;
  
 diff -up ./esc/src/app/xpcom/rhICoolKey.idl.fix21 ./esc/src/app/xpcom/rhICoolKey.idl
---- ./esc/src/app/xpcom/rhICoolKey.idl.fix21	2013-03-18 18:34:05.617895759 -0700
-+++ ./esc/src/app/xpcom/rhICoolKey.idl	2013-03-18 18:34:05.677950976 -0700
+--- ./esc/src/app/xpcom/rhICoolKey.idl.fix21	2013-03-13 11:03:56.473280238 -0700
++++ ./esc/src/app/xpcom/rhICoolKey.idl	2013-03-13 11:04:54.211760983 -0700
 @@ -49,11 +49,11 @@ interface rhICoolKey: nsISupports
  
      void CancelCoolKeyOperation(in unsigned long aKeyType, in string aKeyID);
@@ -308,8 +308,8 @@ diff -up ./esc/src/app/xpcom/rhICoolKey.idl.fix21 ./esc/src/app/xpcom/rhICoolKey
      
      unsigned long GetCoolKeyStatus(in unsigned long  aKeyType,in string aKeyID);
 diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix21 ./esc/src/app/xpcom/tray/rhLinuxTray.cpp
---- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix21	2013-03-18 18:34:05.669021907 -0700
-+++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2013-03-18 18:34:05.677950976 -0700
+--- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix21	2013-03-13 11:01:45.800999740 -0700
++++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2013-03-13 11:02:10.422070839 -0700
 @@ -690,7 +690,7 @@ rhITrayWindNotify* rhTray::GetTrayWindNo
  
      PR_LOG( trayLog, PR_LOG_DEBUG, ("%s rhCoolKey::GetNotifyKeyListener:  looking for %p returning NULL. \n",GetTStamp(tBuff,56),listener));
@@ -320,22 +320,8 @@ diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix21 ./esc/src/app/xpcom/tray
  
  int rhTray::GetTrayWindNotifyListSize()
 diff -up ./esc/src/app/xul/esc/application.ini.fix21 ./esc/src/app/xul/esc/application.ini
---- ./esc/src/app/xul/esc/application.ini.fix21	2013-03-18 18:34:48.988044644 -0700
-+++ ./esc/src/app/xul/esc/application.ini	2013-03-18 18:35:06.622074645 -0700
-@@ -25,11 +25,11 @@ Vendor=RedHat
- Name=ESC
- ;
- ; This field specifies your application's version.  This field is optional.
--Version=1.1.0-25
-+Version=1.1.0-25.1
- ;
- ; This field specifies your application's build ID (timestamp).  This field is
- ; required.
--BuildID=0000001025
-+BuildID=0000001026
- ;
- ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
- ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+--- ./esc/src/app/xul/esc/application.ini.fix21	2013-03-13 11:08:13.151488371 -0700
++++ ./esc/src/app/xul/esc/application.ini	2013-03-13 11:08:46.011558921 -0700
 @@ -47,6 +47,6 @@ MinVersion=10.0.0
  ; application requires.  It should be specified if your application uses
  ; unfrozen interfaces.  Specifying 1.8 matches all releases with a version
@@ -345,8 +331,8 @@ diff -up ./esc/src/app/xul/esc/application.ini.fix21 ./esc/src/app/xul/esc/appli
  
  [Shell]
 diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix21 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
---- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix21	2013-03-18 18:34:05.670910892 -0700
-+++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2013-03-18 18:34:05.679893392 -0700
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix21	2013-03-13 11:09:05.807599044 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2013-03-13 11:10:21.676806696 -0700
 @@ -133,7 +133,6 @@ jsNotify.prototype = {
    var gNotify=null;
  
@@ -644,8 +630,8 @@ diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix21 ./esc/src/app/xul
  
         prompts.alert(window,title,message);
 diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix21 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
---- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix21	2013-03-18 18:34:05.675894440 -0700
-+++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2013-03-18 18:34:05.679893392 -0700
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix21	2013-03-13 11:13:58.366066810 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2013-03-13 11:14:34.888891040 -0700
 @@ -63,7 +63,6 @@ jsWindNotify.prototype = {
  
   // GECKO ONLY initialization

@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 25%{?dist}.1
+Release: 26%{?dist}
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedora.redhat.com/wiki/CoolKey 
@@ -51,6 +51,8 @@ Patch19: esc-1.1.0-fix19.patch
 Patch20: esc-1.1.0-fix20.patch
 # A fix to #920826 - esc ceased working after Firefox/xulrunner update to 17 and above serie
 Patch21: esc-1.1.0-fix21.patch
+# Fixes to 981156 and 961582
+Patch22: esc-1.1.0-fix22.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
@@ -126,10 +128,11 @@ cryptographic smartcards.
 %patch19 -p1 -b .fix19
 %patch20 -p1 -b .fix20
 %patch21 -p1 -b .fix21
+%patch22 -p1 -b .fix22
 
 %build
 
-export GECKO_VER=17.0.3
+export GECKO_VER=17.0.8
 export GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-$GECKO_VER/sdk
 export GECKO_BIN_PATH=%{_libdir}/xulrunner-devel-$GECKO_VER/bin
 export GECKO_INCLUDE_PATH=/usr/include/xulrunner-$GECKO_VER
@@ -167,7 +170,7 @@ mkdir -p $RPM_BUILD_ROOT/%{pixmapdir}
 mkdir -p $RPM_BUILD_ROOT/%{docdir}
 
 
-sed -e 's;\$LIBDIR;'%{_libdir}';g'  %{SOURCE1} > $RPM_BUILD_ROOT/%{escbindir}/%{name}
+sed -e 's;\$LIBDIR;'%{_libdir}';g' ../../../rpm/%{name}   > $RPM_BUILD_ROOT/%{escbindir}/%{name}
 
 
 chmod 755 $RPM_BUILD_ROOT/%{escbindir}/esc
@@ -189,10 +192,18 @@ cd ../../../dist/*DBG*/esc_build/esc
 cp %{esc_chromepath}/esc.png $RPM_BUILD_ROOT/%{icondir}
 ln -s $RPMBUILD_ROOT%{icondir}/esc.png $RPM_BUILD_ROOT/%{pixmapdir}/esc.png
 
-cp %{SOURCE2} $RPM_BUILD_ROOT/%{_datadir}/%{appdir}
-cp %{SOURCE2} $RPM_BUILD_ROOT/%{autostartdir}
+echo $PWD
+
+#cp %{SOURCE2} $RPM_BUILD_ROOT/%{_datadir}/%{appdir}
+#cp %{SOURCE2} $RPM_BUILD_ROOT/%{autostartdir}
 
 cd %{_builddir}
+
+cp %{escname}/esc/rpm/%{name}.desktop $RPM_BUILD_ROOT/%{_datadir}/%{appdir}
+cp %{escname}/esc/rpm/%{name}.desktop $RPM_BUILD_ROOT/%{autostartdir}
+
+
+
 cp %{escname}/esc/LICENSE $RPM_BUILD_ROOT/%{docdir}
 
 rm -f $RPM_BUILD_ROOT/%{escdir}/esc
@@ -252,6 +263,8 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
+* Tue Aug 13 2013 Jack Magne <jmagne@redhat.com>= 1.1.0-26
+- Resolve bugs #981156 and #961582. One minor permissions issue, the other fix to malformed desktop file.
 * Thu Mar 14 2013  Jack Magne <jmagne@rehdat.com>= 1.1.0-25.1
 - Resolves: #922646 - esc ceased working after Firefox/xulrunner update to 17 and above series 
 * Wed Mar 28 2012  Jack Magne <jmagne@redhat.com>= 1.1.0-24.2

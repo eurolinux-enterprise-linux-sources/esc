@@ -1,0 +1,94 @@
+diff -up ./esc/rpm/esc.desktop.fix22 ./esc/rpm/esc.desktop
+--- ./esc/rpm/esc.desktop.fix22	2006-09-27 10:19:19.000000000 -0700
++++ ./esc/rpm/esc.desktop	2013-08-13 12:16:28.415878648 -0700
+@@ -5,4 +5,4 @@ Name=Smart Card Manager
+ Comment=Enterprise Security Client Smart Card Manager
+ Categories=System;Application;SystemSetup;X-Red-Hat-Base;
+ Exec=esc
+-Icon=esc.png
++Icon=esc
+diff -up ./esc/rpm/esc.fix22 ./esc/rpm/esc
+--- ./esc/rpm/esc.fix22	2007-08-02 11:16:38.000000000 -0700
++++ ./esc/rpm/esc	2013-08-13 12:16:28.415878648 -0700
+@@ -18,19 +18,16 @@
+ # END COPYRIGHT BLOCK
+ 
+ 
+-
+-
+-DO_SECMODE="false"
+-SECURITY_URL=
+ DO_FORCEMODE="false"
+ DO_SHOW_VERSION="false"
+ ESC_ARGS=
+ 
+ 
+-ESC_PROFILE_BASE=~/.redhat/esc
++ESC_PROFILE_BASE=~/.redhat
++
+ ESC_LOG_FILE=esc.log
+ 
+-ESC_PATH=$LIBDIR/esc-1.0.1
++ESC_PATH=$LIBDIR/esc-1.1.0
+ ESC_BIN_PATH=/usr/bin
+ ESC_EXEC=esc
+ ESCD_EXEC=escd
+@@ -97,30 +94,17 @@ function processArgs {
+             #echo "Do show version!"
+             DO_SHOW_VERSION="true"
+         fi
+-        if [ $DO_SECMODE == "true" ]
+-        then
+-            #echo "Sec Mode Url $arg"
+-            SECURITY_URL=$arg
+-        fi
+-        if [ $arg == "-secmode" ]
+-        then
+-            DO_SECMODE="true"
+-            #echo "Do security mode!"
+-        fi
+     done
+-
+-    if [ $DO_SECMODE == "true" ]
+-    then
+-        #echo "Launch ESC in security mode!"
+-        ARGS="--secmode $SECURITY_URL"
+-    fi
+ }
+ 
++
+ processArgs $*
+ 
+ if [ ! -d $ESC_PROFILE_BASE ]
+ then
+     mkdir -p  $ESC_PROFILE_BASE
++    mkdir  $ESC_PROFILE_BASE/$ESC_EXEC
++    chmod -R 755 $ESC_PROFILE_BASE 
+ fi
+ 
+ cd $ESC_PATH
+@@ -180,7 +164,6 @@ else
+     #echo "esc not already running start up and bring up window."
+     ./$ESC_EXEC & 
+     sleep 4
+-
+     #echo "done sleeping bring up esc window."
+     ./$ESC_EXEC
+     exit 0
+diff -up ./esc/src/app/xul/esc/application.ini.fix22 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix22	2013-08-13 12:17:23.566378066 -0700
++++ ./esc/src/app/xul/esc/application.ini	2013-08-13 12:17:41.238379164 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-25
++Version=1.1.0-26
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001025
++BuildID=0000001026
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on

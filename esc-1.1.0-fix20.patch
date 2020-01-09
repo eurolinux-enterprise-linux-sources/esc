@@ -1,0 +1,49 @@
+diff -up ./esc/src/app/xul/esc/application.ini.fix20 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix20	2012-03-28 15:30:53.979090029 -0700
++++ ./esc/src/app/xul/esc/application.ini	2012-03-28 15:31:25.194081120 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-24
++Version=1.1.0-24.2
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001024
++BuildID=0000001025
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix20 ./esc/src/app/xul/esc/chrome/content/esc/password.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix20	2012-03-28 15:31:42.220151429 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/password.xul	2012-03-28 15:32:04.417035175 -0700
+@@ -23,12 +23,10 @@
+     id="esc-window"
+     title="&getESCPassword;"
+     onload="PasswordLoad();"
+-    onunload="cleanup();"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ 
+ <stringbundle id="esc_strings" src="chrome://esc/locale/esc.properties"/>
+ <script src="password.js"/>
+-<script src="TRAY.js"/>
+ 
+ <spacer class = "horSpacerVeryShort"/>
+  <grid>
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix20 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix20	2012-03-28 15:32:33.893227528 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2012-03-28 15:33:37.470027482 -0700
+@@ -424,6 +424,12 @@ alert("exception " + e);
+    }
+ }
+ 
++// Cleanup this window if ESC.js doesn't do it
++function traycleanup()
++{
++    TrayRemoveWindow(null);
++}
++
+ //String bundling related functions
+ 
+ function loadStringBundle()

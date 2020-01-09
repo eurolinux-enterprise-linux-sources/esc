@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 23%{?dist} 
+Release: 24%{?dist}.2 
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedora.redhat.com/wiki/CoolKey 
@@ -45,20 +45,24 @@ Patch16: esc-1.1.0-fix16.patch
 Patch17: esc-1.1.0-fix17.patch
 # A fix to #704281 - abrt esc-1.1.0-12.fc14: Process /usr/lib64/esc-1.1.0/esc was killed and fix to minor config file typo.
 Patch18: esc-1.1.0-fix18.patch
+# A fix to #807264 - esc ceased working after Firefox/xulrunner update to 10 series
+Patch19: esc-1.1.0-fix19.patch
+# A fix to #807806 - - ESC crashes when an enrolled smart card is inserted.
+Patch20: esc-1.1.0-fix20.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
 BuildRequires: pango-devel libpng-devel pkgconfig zlib-devel
 BuildRequires: nspr-devel nss-devel
 BuildRequires: autoconf213 libX11-devel libXt-devel
-BuildRequires: xulrunner xulrunner-devel
+BuildRequires: xulrunner >= 10.0.0 xulrunner-devel >= 10.0.0
 
 BuildRequires: pcsc-lite-devel coolkey-devel
 BuildRequires: desktop-file-utils zip binutils libnotify-devel
 BuildRequires: dbus-devel
 Requires: pcsc-lite  coolkey nss nspr
 Requires: zip dbus >= 0.90 libnotify >= 0.4.2
-Requires: xulrunner
+Requires: xulrunner > 10.0.0
 
 # 390 does not have coolkey or smartCards
 ExcludeArch: s390 s390x 
@@ -117,12 +121,14 @@ cryptographic smartcards.
 %patch16 -p1 -b .fix16
 %patch17 -p1 -b .fix17
 %patch18 -p1 -b .fix18
+%patch19 -p1 -b .fix19
+%patch20 -p1 -b .fix20
 
 %build
 
-GECKO_SDK_PATH=%{_libdir}/xulrunner-sdk-1.9.2/sdk
-GECKO_BIN_PATH=%{_libdir}/xulrunner-1.9.2
-GECKO_INCLUDE_PATH=%{_includedir}/xulrunner-sdk-1.9.2
+GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-2/sdk
+GECKO_BIN_PATH=%{_libdir}/xulrunner-2
+GECKO_INCLUDE_PATH=%{_includedir}/xulrunner-2
 
 %ifarch x86_64 ppc64 ia64
 USE_64=1
@@ -183,6 +189,11 @@ cp %{SOURCE2} $RPM_BUILD_ROOT/%{autostartdir}
 cd %{_builddir}
 cp %{escname}/esc/LICENSE $RPM_BUILD_ROOT/%{docdir}
 
+rm -f $RPM_BUILD_ROOT/%{escdir}/esc
+
+echo "xulrunner ./application.ini \$* &" > $RPM_BUILD_ROOT/%{escdir}/esc
+
+chmod 755  $RPM_BUILD_ROOT/%{escdir}/esc
 chmod 755 -R $RPM_BUILD_ROOT/%{escdir}/chrome
 chmod 755 -R $RPM_BUILD_ROOT/%{escdir}/defaults
 chmod 755  $RPM_BUILD_ROOT/%{escdir}/application.ini
@@ -200,6 +211,7 @@ rm -rf $RPM_BUILD_ROOT
 %{escbindir}/esc
 %{escdir}/application.ini
 
+%{escdir}/chrome.manifest
 %{escdir}/chrome/chrome.manifest
 
 %{escdir}/chrome/content
@@ -234,32 +246,36 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
+* Wed Mar 28 2012  Jack Magne <jmagne@redhat.com>= 1.1.0-24.2
+- Resolves: #807806 - ESC crashes when an enrolled smart card is inserted.
+* Wed Mar 21 2012  Jack Magne <jmagne@redhat.com>= 1.1.0-24.1
+- Resolves: #807264 - esc ceased working after Firefox/xulrunner update to 10 series
 * Thu Oct 13 2011  Jack Magne <jmagne@redhat.com>= 1.1.0-23
-- Resolves: #704281
-- Resolves: #702683
+- Resolves: 704281
+- Resolves: 702683
 * Sat Aug 13 2011  Jack Magne <jmagne@redhat.com>= 1.1.0-22
-- Resolves: #729027 - Debuginfo package issues in esc
-- Resolves: #253077 - ESC windows should keep the same size if the user resized them
-- Resolves: #682216 - [abrt] esc-1.1.1.0-21.el6 __strcmp_ssse3: Process /usr/lib/esc-1.1.1.0/escd 
+- Resolves: 729027 - Debuginfo package issues in esc
+- Resolves: 253077 - ESC windows should keep the same size if the user resized them
+- Resolves: 682216 - [abrt] esc-1.1.1.0-21.el6 __strcmp_ssse3: Process /usr/lib/esc-1.1.1.0/escd 
 -    was killed by singnal 11 (SIGSEGV)
-- Resolves: #702683 - esc-prefs.js file has a typo
+- Resolves: 702683 - esc-prefs.js file has a typo
 * Mon Apr 26 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-21
-- Related: #582833 - ESC already running error message when user logs out and logs in.
+- Related: 582833 - ESC already running error message when user logs out and logs in.
 * Fri Apr 23 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-20
-- Resolves: #582283 - ESC Enrollment of formatted card fails when more than one card present in usb.
+- Resolves: 582283 - ESC Enrollment of formatted card fails when more than one card present in usb.
 * Tue Apr 06 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-19
-- Resolves: #469867 Cannot use arrow keys to move between cards.
+- Resolves: 469867 Cannot use arrow keys to move between cards.
 * Tue Mar 30 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-18
-- Resolves: #469867 Cannot use arrow keys to move between cards.
+- Resolves: 469867 Cannot use arrow keys to move between cards.
 * Thu Mar 11 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-17
-- Resolves: #556657 Enroll button active for an enrolled CAC card.
-- Resolves: #469867 Cannont use arrow keys to move between cards.
+- Resolves: 556657 Enroll button active for an enrolled CAC card.
+- Resolves: 469867 Cannont use arrow keys to move between cards.
 * Mon Mar 08 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-16
-- Resolves: #556641.
+- Resolves: 556641.
 * Tue Mar 02 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-15
-- Resolves: #568514. ESC crashed after leaving computer untouched.
+- Resolves: 568514. ESC crashed after leaving computer untouched.
 * Tue Jan 26 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-14
-- Resolves: #556639 #556657 #556641 #469867 #469233.
+- Resolves: 556639 556657 556641 469867 469233.
 * Mon Jan 18 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-13
 - Rebuild without ifd-egate dependency.
 * Thu Jan 14 2010  Jack Magne <jmagne@redhat.com>= 1.1.0-12
@@ -281,55 +297,55 @@ fi
 * Wed Apr 22 2009  Jack Magne <jmagne@redhat.com>- 1.1.0-4
 - Move to latest rebased code. Related #496410.
 * Thu Dec 04 2008  Jack Magne <jmagne@redhat.com>- 1.0.0-39
-- Resolves #469202 - Cert Viewer issue              
+- Resolves 469202 - Cert Viewer issue              
 * Tue Nov 11 2008  Jack Magne <jmagne@redhat.com>- 1.0.0-38
-- Resolves  #471923 - ESC Connection issue.
+- Resolves  471923 - ESC Connection issue.
 * Thu Oct 16 2008  Jack Magne <jmagne@redhat.com>- 1.0.0-37
-- Resolves #467126 - Blank authentication dialog problem. 
+- Resolves 467126 - Blank authentication dialog problem. 
 * Fri Sep 26 2008  Jack Magne <jmagne@redhat.com>- 1.0.0-36
-- Related #200475 - Require the xulrunner package, Resolves #248493
+- Related 200475 - Require the xulrunner package, Resolves 248493
 * Thu Sep 18 2008  Jack Magne <jmagne@redhat.com>- 1.0.0-35
 - Related 200475, make rpmdiff tests happy.
 * Tue Sep 16 2008  Jack Magne <jmagne@redhat.com>- 1.0.0-34
-- Resolves #200475 #253081 #437238
+- Resolves 200475 253081 437238
 * Thu Jan 10 2008  Jack Magne <jmagne@redhat.com>- 1.0.0-33
-- Resolves #25324a8 #253268
+- Resolves 25324a8 253268
 * Thu Jul 12 2007  Jack Magne <jmagne@redhat.com>- 1.0.0-32
-- Resolves #248071 - ESC RPM unistall failure if daemon not running.
+- Resolves 248071 - ESC RPM unistall failure if daemon not running.
 * Fri Jun 22 2007  Jack Magne <jmagne@redhat.com>- 1.0.0-31
-- Related #208038 - Top things to put in diagnostics log
+- Related 208038 - Top things to put in diagnostics log
 * Wed Jun 20 2007  Jack Magne <jmagne@redhat.com>- 1.0.0-30
-- Related #204021
+- Related 204021
 * Fri Jun 8 2007   Jack Magne <jmagne@redhat.com>- 1.0-0-29
-- Related #212010
+- Related 212010
 * Fri Jun 8 2007   Jack Magne <jmagne@redhat.com>- 1.0.0-28
-- Resolves #212010 
+- Resolves 212010 
 * Tue Jun 5 2007   Jack Magne <jmagne@redhat.com>- 1.0.0-27 
-- Resolves #203466 Better error message strings.
+- Resolves 203466 Better error message strings.
 * Mon May 21 2007  Jack Magne <jmagne@redhat.com>- 1.0.0-26
-- Related: #206783 Fix the launcher script to work with new logging.
+- Related: 206783 Fix the launcher script to work with new logging.
 * Fri May 11 2007  Jack Magne <jmagne@redhat.com>- 1.0.0-25
-- Resolves: #206783.
+- Resolves: 206783.
 * Mon Apr 23 2007 Jack Magne <jmagne@redhat.com>- 1.0.0-24
 - More Desktop appearance fixes.
-- Related: #208749
+- Related: 208749
 * Mon Apr 23 2007  Jack Magne <jmagne@redhat.com>- 1.0.0-23
 - Desktop appearance fixes.
-- Related: #208749
+- Related: 208749
 * Thu Apr 19 2007 Jack Magne <jmagne@redhat.com>- 1.0.0-22
 - Second drop of 5.1 fixes.
-- Resolves: #203934, #203935, #204959, #206780, #206792, #207721
-- Resolves: #207816, #206791
-- Related:  #208749
+- Resolves: 203934, 203935, 204959, 206780, 207721
+- Resolves: 207816, 206791
+- Related:  208749
 * Wed Apr 18 2007 Jack Magne <jmagne@redhat.com>- 1.0.0-21
 - First 5.1 fixes.
-- Resolves: #203757, #203806, #204661, #205856, #206788, #206791
-- Resolves: #208037, #208333, #210589, #210590, #213912, #226913
-- Resolves: #204021, #205498, #224436
+- Resolves: 203757, 203806, 204661, 205856, 206788, 206791
+- Resolves: 208037, 208333, 210589, 210590, 213912, 226913
+- Resolves: 204021, 205498, 224436
 * Tue Nov 28 2006 Jack Magne <jmagne@redhat.com>- 1.0.0-20
-- fix for bug to commit config changes immediately.  Bug #210988
+- fix for bug to commit config changes immediately.  Bug 210988
 * Wed Nov 15 2006 Jack Magne <jmagne@redhat.com>- 1.0.0-19
--fix for escd double free problem. Bug #209882
+-fix for escd double free problem. Bug 209882
 * Tue Oct 24 2006 Jack Magne <jmagne@redhat.com>- 1.0.0-18
 -rebuilt on RHEL-5 branch
 * Sun Oct 4  2006 Jack Magne <jmagne@redhat.com>- 1.0.0-17
@@ -363,9 +379,9 @@ fi
 - Fixes to get libnotify working properly on FC6 systems.
 
 * Tue Aug 22 2006 Jack Magne <jmagne@redhat.com> - 1.0.0-7
-- Fix for bug #203211, use of system NSS and NSPR for
+- Fix for bug 203211, use of system NSS and NSPR for
 - Xulrunner ,addressing the problem running on 64 bit.
-- Overwriting 5 and 6 due to important bug #203211.
+- Overwriting 5 and 6 due to important bug 203211.
 
 * Fri Aug  18 2006 Jack Magne <jmagne@redhat.com> - 1.0.0-6
 - Correct problem with Patch #6

@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 27%{?dist} 
+Release: 36%{?dist} 
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedoraproject.org/wiki/CoolKey 
@@ -38,6 +38,10 @@ Patch19: esc-1.1.0-fix19.patch
 Patch20: esc-1.1.0-fix20.patch
 Patch21: esc-1.1.0-fix21.patch
 Patch22: esc-1.1.0-fix22.patch
+Patch23: esc-1.1.0-fix23.patch
+Patch24: esc-1.1.0-fix24.patch
+Patch25: esc-1.1.0-fix25.patch
+Patch26: esc-1.1.0-fix26.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
@@ -54,7 +58,7 @@ Requires: zip dbus >= 0.90 libnotify >= 0.4.2
 Requires: xulrunner
 
 # 390 does not have coolkey or smartCards
-ExcludeArch: s390 s390x 
+ExcludeArch:  s390 s390x 
 
 # We can't allow the internal xulrunner to leak out
 AutoReqProv: 0
@@ -75,7 +79,6 @@ AutoReqProv: 0
 %define escrpmdir rpm
 %define escxulchromeicons %{escxuldir}/chrome/icons/default
 %define escdaemon escd
-%define geckoversion 24.2.0
 
 Source0: http://pki.fedoraproject.org/pki/sources/%name/%{escname}.tar.bz2 
 Source1: http://pki.fedoraproject.org/pki/sources/%name/esc
@@ -115,15 +118,25 @@ cryptographic smartcards.
 %patch20 -p1 -b .fix20
 %patch21 -p1 -b .fix21
 %patch22 -p1 -b .fix22
+%patch23 -p1 -b .fix23
+%patch24 -p1 -b .fix24
+%patch25 -p1 -b .fix25
+%patch26 -p1 -b .fix26
+
+r=$(uname -r | sed -e 's/\(^[^.]*\.[^.]*\).*/\1/')
+[ -f esc/coreconf/Linux$r.mk ] || ln -s Linux3.5.mk esc/coreconf/Linux$r.mk
 
 %build
 
-GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-%{geckoversion}/sdk
-GECKO_BIN_PATH=%{_libdir}/xulrunner
-GECKO_INCLUDE_PATH=%{_includedir}/xulrunner-%{geckoversion}
-GECKO_IDL_PATH=/usr/share/idl/xulrunner-%{geckoversion}
+export geckoversion=`rpm -qi xulrunner | grep Version |  sed 's/[\t ]//g;/^$/d' | sed 's/Version://'`
 
-%ifarch x86_64 ppc64 ia64
+GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-$geckoversion/sdk
+echo $GECKO_SDK_PATH
+GECKO_BIN_PATH=%{_libdir}/xulrunner
+GECKO_INCLUDE_PATH=%{_includedir}/xulrunner-$geckoversion
+GECKO_IDL_PATH=/usr/share/idl/xulrunner-$geckoversion
+
+%if %{__isa_bits} == 64
 USE_64=1
 export USE_64
 %endif
@@ -167,14 +180,14 @@ mkdir -p $RPM_BUILD_ROOT/%{icondir}
 mkdir -p $RPM_BUILD_ROOT/%{pixmapdir}
 mkdir -p $RPM_BUILD_ROOT/%{docdir}
 
-sed -e 's;\$LIBDIR;'%{_libdir}';g'  %{SOURCE1} > $RPM_BUILD_ROOT/%{escbindir}/%{name}
+sed -e 's;\$LIBDIR;'%{_libdir}';g'  ../../../rpm/esc > $RPM_BUILD_ROOT/%{escbindir}/%{name}
 
 
 chmod 755 $RPM_BUILD_ROOT/%{escbindir}/esc
 
 mkdir -p $RPM_BUILD_ROOT/%{escdir}
 
-%ifarch x86_64 ppc64 ia64
+%if %{__isa_bits} == 64
 USE_64=1
 export USE_64
 %endif
@@ -185,6 +198,7 @@ make  USE_XUL_SDK=1 install DESTDIR=$RPM_BUILD_ROOT/%{escdir}
 rm -rf $RPM_BUILD_ROOT/%{escdir}/usr
 
 cd ../../../dist/*DBG*/esc_build/esc
+
 
 cp %{esc_chromepath}/esc.png $RPM_BUILD_ROOT/%{icondir}/esc-png.png
 ln -s $RPMBUILD_ROOT%{icondir}/esc-png.png $RPM_BUILD_ROOT/%{pixmapdir}/esc-png.png
@@ -198,6 +212,7 @@ cp %{escname}/esc/LICENSE $RPM_BUILD_ROOT/%{docdir}
 
 rm -f $RPM_BUILD_ROOT/%{escdir}/esc
 
+rm -r $RPM_BUILD_ROOT/%{escdir}/xulrunner
 echo "xulrunner ./application.ini \$* &" > $RPM_BUILD_ROOT/%{escdir}/esc
 
 chmod 755  $RPM_BUILD_ROOT/%{escdir}/esc
@@ -228,7 +243,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %{escdir}/defaults/preferences/esc-prefs.js   
 
-#%{escdir}/xulrunner
 %{icondir}/esc-png.png
 %{pixmapdir}/esc-png.png
 %{autostartdir}/esc.desktop
@@ -254,6 +268,31 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
+* Tue Jan 07 2015 Jack Magne <jmagne@redhat.com> - 1.1.0-36
+- Resolves: Bug #1176241 -  .redhat dir does not have the same permissions during manual and auto launch of ESC Client
+- Minor additional fix.
+* Mon Jan 05 2015 Jack Magne <jmagne@redhat.com> - 1.1.0-35
+- Resolves: Bug #1176241 -  .redhat dir does not have the same permissions during manual and auto launch of ESC Client
+* Tue Dec 16 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-34
+- Resolves: Bug #1173774 - ESC Client does list 
+- the encryption and signing certs under the "Your Certificates" tab when an enrolled card is inserted.
+* Mon Nov 17 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-33
+- Resolves: Bug #1163479 Errata 18562 TPS tests fails - esc rebuild failure because of xulrunner updates.
+* Thu Sep 11 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-30
+- Resolves: Bug #1125496
+- Minor spec and makefile and tweaks to build under xulrunner sdk 31.1.0.
+* Wed Sep 10 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-30
+- Resolves: Bug #1125496 - FTBFS
+- Thanks to:  perobins@redhat.com
+* Mon Sep 08 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-30
+- Resolves: Bug #1125496 - FTBFS
+* Fri Aug 15 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-29
+- Resolves: Bug #1053711 - FTBFS 
+* Fri Jul 11 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-28
+- Thanks to: Marcin Juszkiewicz <mjuszkiewicz@redhat.com>
+- Handle all kernel versions
+- Fix gecko version
+
 * Mon Jan 06 2014 Jack Magne <jmagne@redhat.com> - 1.1.0-27
 - Resolves: Bug 1048856 - esc does not build on RHEL 7
 * Fri Dec 27 2013 Daniel Mach <dmach@redhat.com> - 1.1.0-27

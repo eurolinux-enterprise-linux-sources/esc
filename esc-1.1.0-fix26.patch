@@ -1,0 +1,25 @@
+diff -up ./esc/rpm/esc.fix26 ./esc/rpm/esc
+--- ./esc/rpm/esc.fix26	2015-01-07 14:26:47.740504143 -0800
++++ ./esc/rpm/esc	2015-01-07 14:28:39.757687048 -0800
+@@ -22,8 +22,8 @@ DO_FORCEMODE="false"
+ DO_SHOW_VERSION="false"
+ ESC_ARGS=
+ 
+-
+-ESC_PROFILE_BASE=~/.redhat/esc
++REDHAT_BASE=~/.redhat
++ESC_PROFILE_BASE=$REDHAT_BASE/esc
+ ESC_LOG_FILE=esc.log
+ 
+ ESC_PATH=$LIBDIR/esc-1.1.0
+@@ -102,8 +102,8 @@ processArgs $*
+ if [ ! -d $ESC_PROFILE_BASE ]
+ then
+     mkdir -p  $ESC_PROFILE_BASE
+-    mkdir  $ESC_PROFILE_BASE/$ESC_EXEC
+-    chmod -R 755 $ESC_PROFILE_BASE 
++    chmod  755 $REDHAT_BASE
++    chmod  755 $ESC_PROFILE_BASE
+ fi
+ 
+ cd $ESC_PATH

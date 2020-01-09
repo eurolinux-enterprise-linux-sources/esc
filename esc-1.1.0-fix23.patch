@@ -1,0 +1,143 @@
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix23 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix23	2014-09-11 15:10:30.555942913 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2014-09-11 15:52:25.964980657 -0700
+@@ -127,7 +127,7 @@ endif
+ # #include "mozilla-config.h" to each of your .cpp files. 
+ #GECKO_CONFIG_INCLUDE = -include mozilla-config.h 
+ 
+-GECKO_DEFINES  = -DXPCOM_GLUE   -DMOZILLA_CLIENT
++GECKO_DEFINES  = -DMOZILLA_CLIENT
+ 
+ ifdef ESC_VERSION
+ GECKO_DEFINES += -DESC_VERSION=$(ESC_VERSION)
+@@ -195,13 +195,13 @@ all::	export libs
+ 
+ libs:: 
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir /tmp  -o rhIKeyNotify.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhIKeyNotify.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/header.py --cachedir /tmp  -o rhIKeyNotify.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhIKeyNotify.idl
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir /tmp -o rhIKeyNotify.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhIKeyNotify.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/typelib.py --cachedir /tmp -o rhIKeyNotify.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhIKeyNotify.idl
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir /tmp -o rhICoolKey.h  -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhICoolKey.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/header.py --cachedir /tmp -o rhICoolKey.h  -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhICoolKey.idl
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir /tmp -o rhICoolKey.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhICoolKey.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/typelib.py --cachedir /tmp -o rhICoolKey.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhICoolKey.idl
+ 
+ ifeq ($(OS_ARCH),Darwin)
+ 	$(CXX)   $(CPPFLAGS)  -c  -o $(OBJECT)  $(GECKO_CONFIG_INCLUDE) $(GECKO_DEFINES) $(GECKO_INCLUDES) $(COOL_INCLUDES) $(CXXFLAGS) $(FILES)
+@@ -254,10 +254,10 @@ $(DEPLOY_OBJDIR):
+ 	$(NSINSTALL) ./$(LIB_PREFIX)rhCoolKey.$(DLL_SUFFIX) $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/components
+ 	$(NSINSTALL) ./*.xpt $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/components
+ 	echo  "Creating $(DEPLOY_OBJDIR)"
+-	mkdir $(DEPLOY_OBJDIR)
++#	mkdir $(DEPLOY_OBJDIR)
+ 
+ 	cd $(CORE_DEPTH)/$(DEPLOY_OFFSET)/app/xul/esc; zip -r test.zip * -x *\CVS\* \*.fix*; unzip -d esc test.zip ; rm -f test.zip
+-	$(XUL_FRAMEWORK_BIN_PATH)/$(XULRUNNER_EXEC) --install-app $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/esc  $(DEPLOY_OBJDIR)
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/install_app.py $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/esc  $(DEPLOY_OBJDIR)/esc --appName esc
+ 
+ ifeq ($(OS_ARCH), Darwin)
+ 	mkdir $(DEPLOY_OBJDIR)/$(XULRUNNER_FRAME_BASE)
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix23 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix23	2014-09-11 15:13:33.032945651 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2014-09-11 15:16:10.244948010 -0700
+@@ -109,7 +109,7 @@ class CoolKeyShutdownObserver : public n
+  ~CoolKeyShutdownObserver(); 
+  };
+ 
+- NS_IMPL_ISUPPORTS1(CoolKeyShutdownObserver, nsIObserver)
++ NS_IMPL_ISUPPORTS(CoolKeyShutdownObserver, nsIObserver)
+ 
+  CoolKeyShutdownObserver::~CoolKeyShutdownObserver()
+  {
+@@ -120,7 +120,7 @@ class CoolKeyShutdownObserver : public n
+  NS_IMETHODIMP
+  CoolKeyShutdownObserver::Observe(nsISupports *aSubject,
+                                  const char *aTopic,
+-                                 const PRUnichar *someData)
++                                 const char16_t *someData)
+  {
+      char tBuff[56];
+      if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID))
+@@ -1793,5 +1793,5 @@ static const mozilla::Module kCoolKeyMod
+  NSMODULE_DEFN(rhCoolKeyModule) = &kCoolKeyModule;
+ //
+ 
+-NS_IMPL_ISUPPORTS1(rhCoolKey,rhICoolKey) 
++NS_IMPL_ISUPPORTS(rhCoolKey,rhICoolKey) 
+ 
+diff -up ./esc/src/app/xpcom/tray/Makefile.sdk.fix23 ./esc/src/app/xpcom/tray/Makefile.sdk
+--- ./esc/src/app/xpcom/tray/Makefile.sdk.fix23	2014-09-11 14:42:02.961917291 -0700
++++ ./esc/src/app/xpcom/tray/Makefile.sdk	2014-09-11 15:09:52.264942339 -0700
+@@ -167,7 +167,7 @@ endif
+ # #include "mozilla-config.h" to each of your .cpp files. 
+ #GECKO_CONFIG_INCLUDE = -include mozilla-config.h 
+ 
+-GECKO_DEFINES  =   -DMOZILLA_CLIENT -DXPCOM_GLUE
++GECKO_DEFINES  =   -DMOZILLA_CLIENT
+ 
+ NSS_INCLUDE =  /usr/include/nss3
+ NSPR_INCLUDE =  /usr/include/nspr4
+@@ -230,13 +230,13 @@ all::	export libs
+ libs:: 
+ 	echo "PPC_BUILD $(PPC_BUILD)"
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir=/tmp -o rhITray.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhITray.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/header.py --cachedir=/tmp -o rhITray.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhITray.idl
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir=/tmp -o rhITray.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhITray.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/typelib.py --cachedir=/tmp -o rhITray.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhITray.idl
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir=/tmp -o rhITrayWindNotify.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhITrayWindNotify.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/header.py --cachedir=/tmp -o rhITrayWindNotify.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhITrayWindNotify.idl
+ 
+-	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir=/tmp -o rhITrayWindNotify.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhITrayWindNotify.idl
++	$(PYTHON_BIN) $(GECKO_BIN_PATH)/typelib.py --cachedir=/tmp -o rhITrayWindNotify.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhITrayWindNotify.idl
+ 
+ ifeq ($(OS_ARCH),Darwin)
+ 	$(CXX)   $(CPPFLAGS)  -c  -o $(OBJECT)  $(GECKO_CONFIG_INCLUDE) $(GECKO_DEFINES) $(GECKO_INCLUDES) $(COOL_INCLUDES) $(CXXFLAGS) $(FILES)
+diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix23 ./esc/src/app/xpcom/tray/rhLinuxTray.cpp
+--- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix23	2014-09-11 14:43:57.953919016 -0700
++++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2014-09-11 14:44:21.259919366 -0700
+@@ -898,5 +898,5 @@ static const mozilla::Module kCoolKeyTra
+ // shared library.
+ NSMODULE_DEFN(rhCoolKeyTrayModule) = &kCoolKeyTrayModule;
+ 
+-NS_IMPL_ISUPPORTS1(rhTray,rhITray)
++NS_IMPL_ISUPPORTS(rhTray,rhITray)
+ 
+diff -up ./esc/src/app/xul/esc/application.ini.fix23 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix23	2014-09-11 16:02:33.000989766 -0700
++++ ./esc/src/app/xul/esc/application.ini	2014-09-11 16:03:19.911990470 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-26
++Version=1.1.0-31
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001026
++BuildID=0000001031
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+@@ -41,12 +41,12 @@ ID={6380471b-1924-4b48-b652-49f42951af86
+ ; This field is required.  It specifies the minimum Gecko version that this
+ ; application requires.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MinVersion=24.0.0
++MinVersion=31.1.0
+ ;
+ ; This field is optional.  It specifies the maximum Gecko version that this
+ ; application requires.  It should be specified if your application uses
+ ; unfrozen interfaces.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MaxVersion=25.0.0
++MaxVersion=32.0.0
+ 
+ [Shell]

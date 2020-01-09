@@ -1,0 +1,29 @@
+diff -up ./esc/src/app/xul/esc/application.ini.fix24 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix24	2014-12-16 11:39:13.361983789 -0800
++++ ./esc/src/app/xul/esc/application.ini	2014-12-16 11:39:48.610395639 -0800
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-31
++Version=1.1.0-34
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001031
++BuildID=0000001034
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix24 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix24	2014-12-16 11:34:14.715786633 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2014-12-16 11:35:21.541444181 -0800
+@@ -4056,7 +4056,7 @@ function launchCertViewerIfCerts()
+ //Launch page to view card's certificates
+ function launchCertViewer()
+ {
+-   var wind = window.openDialog("chrome://esc/content/certManager.xul", "","chrome,centerscreen,modal=yes");
++   var wind = window.openDialog("chrome://pippki/content/certManager.xul", "","chrome,centerscreen,modal=yes");
+ }
+ 
+ //Launch ESC admin page window

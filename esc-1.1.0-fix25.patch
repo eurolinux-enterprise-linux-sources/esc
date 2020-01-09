@@ -1,0 +1,65 @@
+diff -up ./esc/rpm/esc.fix25 ./esc/rpm/esc
+--- ./esc/rpm/esc.fix25	2015-01-05 16:42:52.346457096 -0800
++++ ./esc/rpm/esc	2015-01-05 16:48:05.473230783 -0800
+@@ -18,10 +18,6 @@
+ # END COPYRIGHT BLOCK
+ 
+ 
+-
+-
+-DO_SECMODE="false"
+-SECURITY_URL=
+ DO_FORCEMODE="false"
+ DO_SHOW_VERSION="false"
+ ESC_ARGS=
+@@ -30,7 +26,7 @@ ESC_ARGS=
+ ESC_PROFILE_BASE=~/.redhat/esc
+ ESC_LOG_FILE=esc.log
+ 
+-ESC_PATH=$LIBDIR/esc-1.0.1
++ESC_PATH=$LIBDIR/esc-1.1.0
+ ESC_BIN_PATH=/usr/bin
+ ESC_EXEC=esc
+ ESCD_EXEC=escd
+@@ -97,30 +93,17 @@ function processArgs {
+             #echo "Do show version!"
+             DO_SHOW_VERSION="true"
+         fi
+-        if [ $DO_SECMODE == "true" ]
+-        then
+-            #echo "Sec Mode Url $arg"
+-            SECURITY_URL=$arg
+-        fi
+-        if [ $arg == "-secmode" ]
+-        then
+-            DO_SECMODE="true"
+-            #echo "Do security mode!"
+-        fi
+     done
+-
+-    if [ $DO_SECMODE == "true" ]
+-    then
+-        #echo "Launch ESC in security mode!"
+-        ARGS="--secmode $SECURITY_URL"
+-    fi
+ }
+ 
++
+ processArgs $*
+ 
+ if [ ! -d $ESC_PROFILE_BASE ]
+ then
+     mkdir -p  $ESC_PROFILE_BASE
++    mkdir  $ESC_PROFILE_BASE/$ESC_EXEC
++    chmod -R 755 $ESC_PROFILE_BASE 
+ fi
+ 
+ cd $ESC_PATH
+@@ -180,7 +163,6 @@ else
+     #echo "esc not already running start up and bring up window."
+     ./$ESC_EXEC & 
+     sleep 4
+-
+     #echo "done sleeping bring up esc window."
+     ./$ESC_EXEC
+     exit 0

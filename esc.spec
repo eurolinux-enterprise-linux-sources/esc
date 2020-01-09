@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 36%{?dist} 
+Release: 37%{?dist} 
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedoraproject.org/wiki/CoolKey 
@@ -42,6 +42,7 @@ Patch23: esc-1.1.0-fix23.patch
 Patch24: esc-1.1.0-fix24.patch
 Patch25: esc-1.1.0-fix25.patch
 Patch26: esc-1.1.0-fix26.patch
+Patch27: esc-1.1.0-fix27.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
@@ -122,6 +123,7 @@ cryptographic smartcards.
 %patch24 -p1 -b .fix24
 %patch25 -p1 -b .fix25
 %patch26 -p1 -b .fix26
+%patch27 -p1 -b .fix37
 
 r=$(uname -r | sed -e 's/\(^[^.]*\.[^.]*\).*/\1/')
 [ -f esc/coreconf/Linux$r.mk ] || ln -s Linux3.5.mk esc/coreconf/Linux$r.mk
@@ -136,9 +138,11 @@ GECKO_BIN_PATH=%{_libdir}/xulrunner
 GECKO_INCLUDE_PATH=%{_includedir}/xulrunner-$geckoversion
 GECKO_IDL_PATH=/usr/share/idl/xulrunner-$geckoversion
 
+%if  0%{?__isa_bits}
 %if %{__isa_bits} == 64
 USE_64=1
 export USE_64
+%endif
 %endif
 
 export GECKO_SDK_PATH
@@ -187,9 +191,11 @@ chmod 755 $RPM_BUILD_ROOT/%{escbindir}/esc
 
 mkdir -p $RPM_BUILD_ROOT/%{escdir}
 
+%if  0%{?__isa_bits}
 %if %{__isa_bits} == 64
 USE_64=1
 export USE_64
+%endif
 %endif
 
 
@@ -268,7 +274,10 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
-* Tue Jan 07 2015 Jack Magne <jmagne@redhat.com> - 1.1.0-36
+* Tue Jun 28 2016 Jack Magne <jmagne@redhat.com> - 1.1.0-37
+- Resolves: Bug #885898 - ESC incorrectly display Issuer information for a CAC smart card
+- Resolves: Bug 1070802 - missing -fstack-protector-strong
+* Tue Jan 06 2015 Jack Magne <jmagne@redhat.com> - 1.1.0-36
 - Resolves: Bug #1176241 -  .redhat dir does not have the same permissions during manual and auto launch of ESC Client
 - Minor additional fix.
 * Mon Jan 05 2015 Jack Magne <jmagne@redhat.com> - 1.1.0-35

@@ -1,0 +1,97 @@
+diff -up ./esc/src/app/daemon/manifest.mn.fix27 ./esc/src/app/daemon/manifest.mn
+--- ./esc/src/app/daemon/manifest.mn.fix27	2016-06-27 18:02:11.863677684 -0700
++++ ./esc/src/app/daemon/manifest.mn	2016-06-27 18:02:30.416677684 -0700
+@@ -32,7 +32,7 @@ endif
+ 
+ DEFINES         +=  -I$(SYS_INC)/nspr4 -I$(SYS_INC)/nss3  -I$(SYS_INC)/$(MOZ_OFFSET)/nspr -I$(SYS_INC)/$(MOZ_OFFSET)/nss
+ 
+-DEFINES += $(shell pkg-config --cflags xft)
++DEFINES += $(shell pkg-config --cflags xft) -fstack-protector-strong
+ 
+ CPPFLAGS		+= $(DEFINES) -g
+ 
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix27 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix27	2016-06-27 18:03:07.239677684 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2016-06-27 18:03:52.117677684 -0700
+@@ -112,7 +112,7 @@ endif
+ ifeq ($(OS_ARCH),Linux)
+ CPPFLAGS += -g -fno-rtti \
+                 -DXPCOM_GLUE_USE_NSPR -fno-exceptions \
+-                -fshort-wchar -fPIC -std=gnu++0x  
++                -fshort-wchar -fPIC -std=gnu++0x -fstack-protector-strong
+ GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib  -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl -L$(GECKO_SDK_PATH)/lib -lxpcomglue_s
+ endif
+ 
+diff -up ./esc/src/app/xpcom/tray/Makefile.sdk.fix27 ./esc/src/app/xpcom/tray/Makefile.sdk
+--- ./esc/src/app/xpcom/tray/Makefile.sdk.fix27	2016-06-27 18:04:06.166677684 -0700
++++ ./esc/src/app/xpcom/tray/Makefile.sdk	2016-06-27 18:04:28.840677684 -0700
+@@ -110,7 +110,7 @@ endif
+ CXX   = c++ 
+ CPPFLAGS +=     -fno-rtti   \
+ 		-fno-exceptions \
+-		-fshort-wchar -DXPCOM_GLUE_USE_NSPR=1
++		-fshort-wchar -DXPCOM_GLUE_USE_NSPR=1 -fstack-protector-strong
+ 
+ ifeq ($(OS_ARCH),WINNT)
+ CPPFLAGS = -MD  -DXP_WIN=1 -DXP_WIN32=1 -DXPCOM_GLUE -DXPCOM_GLUE_USE_NSPR -TP -nologo -W3 -Gy -EHsc -DNDEBUG
+diff -up ./esc/src/lib/coolkey/CoolKeyHandler.cpp.fix27 ./esc/src/lib/coolkey/CoolKeyHandler.cpp
+--- ./esc/src/lib/coolkey/CoolKeyHandler.cpp.fix27	2016-06-28 15:05:39.031677684 -0700
++++ ./esc/src/lib/coolkey/CoolKeyHandler.cpp	2016-06-28 16:49:44.830201737 -0700
+@@ -2174,9 +2174,19 @@ CKHGetCoolKeyInfo(PK11SlotInfo *aSlot)
+ 
+     // Give the CAC card some sort of unique key ID
+ 
+-    if(strlen(info->mCUID) == 0)
++    //There is a bug in coolkey where it returns the CUID of some previous
++    // token's cuid , instead of something unique, thus lets use the label.
++
++    if(strlen(info->mCUID) == 0 || !isACOOLKey)
+     {
+-        strncpy(info->mCUID,(char *)tokenInfo.label,35);
++        memset((void *) info->mCUID,0,35);
++        int max = 0;
++        if(sizeof(tokenInfo.label) < 34) {
++            max = sizeof(tokenInfo.label);
++        } else {
++            max = 34;
++        } 
++        strncpy(info->mCUID,(char *)tokenInfo.label,max);
+         info->mCUID[34] = 0;
+         isACOOLKey = 0;
+     }
+diff -up ./esc/src/lib/coolkey/manifest.mn.fix27 ./esc/src/lib/coolkey/manifest.mn
+--- ./esc/src/lib/coolkey/manifest.mn.fix27	2016-06-27 17:54:18.221677684 -0700
++++ ./esc/src/lib/coolkey/manifest.mn	2016-06-27 18:00:13.817677684 -0700
+@@ -26,7 +26,7 @@ REQUIRES	= httpchunked nss nspr ckyapple
+ ifndef MOZ_OFFSET
+ MOZ_OFFSET	= mozilla-1.7.13
+ endif
+-DEFINES		+= -I$(CORE_DEPTH)/esc/app/xpcom -I$(SYS_INC)/nspr4 -I$(SYS_INC)/nss3 -I$(SYS_INC)/PCSC  -I$(SYS_INC)/$(MOZ_OFFSET)/nspr -I$(SYS_INC)/$(MOZ_OFFSET)/nss -I$(XULRUNNER_BASE)/dist/public/nss -I$(XULRUNNER_BASE)/dist/include/nspr -I$(GECKO_SDK_PATH)/include/nspr -I$(GECKO_SDK_PATH)/include/nss -fno-strict-aliasing
++DEFINES		+= -I$(CORE_DEPTH)/esc/app/xpcom -I$(SYS_INC)/nspr4 -I$(SYS_INC)/nss3 -I$(SYS_INC)/PCSC  -I$(SYS_INC)/$(MOZ_OFFSET)/nspr -I$(SYS_INC)/$(MOZ_OFFSET)/nss -I$(XULRUNNER_BASE)/dist/public/nss -I$(XULRUNNER_BASE)/dist/include/nspr -I$(GECKO_SDK_PATH)/include/nspr -I$(GECKO_SDK_PATH)/include/nss -fno-strict-aliasing -fstack-protector-strong
+ MAPFILE 	= $(OBJDIR)/ckymanager.def
+ 
+ #EXTRA_LIBS	+= -L$(DIST)/lib -lckyapplet
+diff -up ./esc/src/lib/notifytray/manifest.mn.fix27 ./esc/src/lib/notifytray/manifest.mn
+--- ./esc/src/lib/notifytray/manifest.mn.fix27	2016-06-27 18:00:24.566677684 -0700
++++ ./esc/src/lib/notifytray/manifest.mn	2016-06-27 18:01:03.809677684 -0700
+@@ -17,7 +17,7 @@
+ 
+ CORE_DEPTH	= ../../..
+ 
+-DEFINES += $(shell pkg-config --cflags gtk+-2.0)
++DEFINES += $(shell pkg-config --cflags gtk+-2.0) -fstack-protector-strong
+ CCFLAGS += $(shell pkg-config --libs gtk+-2.0) 
+ CCFLAGS += $(shell pkg-config --cflags glib-2.0)
+ 
+diff -up ./esc/src/lib/NssHttpClient/manifest.mn.fix27 ./esc/src/lib/NssHttpClient/manifest.mn
+--- ./esc/src/lib/NssHttpClient/manifest.mn.fix27	2016-06-27 18:01:15.521677684 -0700
++++ ./esc/src/lib/NssHttpClient/manifest.mn	2016-06-27 18:01:34.320677684 -0700
+@@ -31,7 +31,7 @@ endif
+ 
+ 
+ MAPFILE		= $(OBJDIR)/httpchunked.def
+-DEFINES		= -I$(SYS_INC)/nspr4 -I$(SYS_INC)/nss3 -I$(SYS_INC)/$(MOZ_OFFSET)/nspr -I$(SYS_INC)/$(MOZ_OFFSET)/nss -I$(XULRUNNER_BASE)/dist/public/nss -I$(XULRUNNER_BASE)/dist/include/nspr -I$(GECKO_SDK_PATH)/include/nspr -I$(GECKO_SDK_PATH)/include/nss
++DEFINES		= -I$(SYS_INC)/nspr4 -I$(SYS_INC)/nss3 -I$(SYS_INC)/$(MOZ_OFFSET)/nspr -I$(SYS_INC)/$(MOZ_OFFSET)/nss -I$(XULRUNNER_BASE)/dist/public/nss -I$(XULRUNNER_BASE)/dist/include/nspr -I$(GECKO_SDK_PATH)/include/nspr -I$(GECKO_SDK_PATH)/include/nss -fstack-protector-strong
+ 
+ CPPSRCS		= \
+ 		Cache.cpp \

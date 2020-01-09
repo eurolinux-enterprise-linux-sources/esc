@@ -1,0 +1,11 @@
+diff -up ./esc/src/app/daemon/escd.cpp.fix30 ./esc/src/app/daemon/escd.cpp
+--- ./esc/src/app/daemon/escd.cpp.fix30	2019-03-21 14:21:28.584862691 -0700
++++ ./esc/src/app/daemon/escd.cpp	2019-03-21 14:21:49.509745584 -0700
+@@ -406,6 +406,7 @@ int main(int argc, char **argv)
+     if(!display)
+     {
+         PR_LOG( escDLog, PR_LOG_ALWAYS, ("%s Daemon: Error Obtaining X Display! \n",GetTStamp(tBuff,56)));
++        exit(1);
+     }
+ 
+     PR_LOG( escDLog, PR_LOG_ALWAYS, ("%s Daemon: Attempted XOpenDisplay: %p \n",GetTStamp(tBuff,56),display)); 

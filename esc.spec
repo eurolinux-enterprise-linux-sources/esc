@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 40%{?dist} 
+Release: 42%{?dist} 
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedoraproject.org/wiki/CoolKey 
@@ -45,6 +45,7 @@ Patch26: esc-1.1.0-fix26.patch
 Patch27: esc-1.1.0-fix27.patch
 Patch28: esc-1.1.0-fix28.patch
 Patch29: esc-1.1.0-fix29.patch
+Patch30: esc-1.1.0-fix30.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
@@ -128,6 +129,7 @@ cryptographic smartcards.
 %patch27 -p1 -b .fix37
 %patch28 -p1 -b .fix28
 %patch29 -p1 -b .fix29
+%patch30 -p1 -b .fix30
 
 r=$(uname -r | sed -e 's/\(^[^.]*\.[^.]*\).*/\1/')
 [ -f esc/coreconf/Linux$r.mk ] || ln -s Linux3.5.mk esc/coreconf/Linux$r.mk
@@ -278,6 +280,11 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
+* Tue Mar 26 2019 Jack Magne <jmagne@redhat.com> - 1.1.0-42
+- Related: Bug# 1358500 - Segmentation fault happens when escd runs with a NULL display.
+- Resolve changelog entry error.
+* Thu Mar 21 2019 Jack Magne <jmagne@redhat.com> - 1.1.0-41
+- Resolves: Bug# 1358500 - Segmentation fault happens when escd runs with a NULL display.
 * Fri Jan 19 2018 Jack Magne <jmagne@redhat.com> - 1.1.0-40
 - Resolves: Bug #1466949, Relate: Bug #1523946 - [ppc64] ld switch to relro breaks GDB. This caused an rpmdiff failure.
 * Mon Jan 08 2018 Jack Magne <jmagne@redhat.com> - 1.1.0-39

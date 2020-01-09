@@ -687,14 +687,14 @@ diff -up ./esc/src/app/xul/esc/application.ini.fix19 ./esc/src/app/xul/esc/appli
  ; application requires.  Specifying 1.8 matches all releases with a version
  ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
 -MinVersion=1.9
-+MinVersion=10.0.0
++MinVersion=2.0.0
  ;
  ; This field is optional.  It specifies the maximum Gecko version that this
  ; application requires.  It should be specified if your application uses
  ; unfrozen interfaces.  Specifying 1.8 matches all releases with a version
  ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
 -MaxVersion=1.99
-+MaxVersion=10.9.9
++MaxVersion=50.0.0
  
  [Shell]
 diff -up ./esc/src/app/xul/esc/chrome/chrome.manifest.fix19 ./esc/src/app/xul/esc/chrome/chrome.manifest

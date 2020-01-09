@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 24%{?dist}.2 
+Release: 25%{?dist}.1
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedora.redhat.com/wiki/CoolKey 
@@ -49,6 +49,8 @@ Patch18: esc-1.1.0-fix18.patch
 Patch19: esc-1.1.0-fix19.patch
 # A fix to #807806 - - ESC crashes when an enrolled smart card is inserted.
 Patch20: esc-1.1.0-fix20.patch
+# A fix to #920826 - esc ceased working after Firefox/xulrunner update to 17 and above serie
+Patch21: esc-1.1.0-fix21.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
@@ -123,12 +125,15 @@ cryptographic smartcards.
 %patch18 -p1 -b .fix18
 %patch19 -p1 -b .fix19
 %patch20 -p1 -b .fix20
+%patch21 -p1 -b .fix21
 
 %build
 
-GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-2/sdk
-GECKO_BIN_PATH=%{_libdir}/xulrunner-2
-GECKO_INCLUDE_PATH=%{_includedir}/xulrunner-2
+export GECKO_VER=17.0.3
+export GECKO_SDK_PATH=%{_libdir}/xulrunner-devel-$GECKO_VER/sdk
+export GECKO_BIN_PATH=%{_libdir}/xulrunner-devel-$GECKO_VER/bin
+export GECKO_INCLUDE_PATH=/usr/include/xulrunner-$GECKO_VER
+export GECKO_IDL_PATH=/usr/share/idl/xulrunner-$GECKO_VER
 
 %ifarch x86_64 ppc64 ia64
 USE_64=1
@@ -138,6 +143,7 @@ export USE_64
 export GECKO_SDK_PATH
 export GECKO_BIN_PATH
 export GECKO_INCLUDE_PATH
+export GECKO_IDL_PATH
 # last setup call moved  the current directory
 
 cd esc 
@@ -246,6 +252,8 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
+* Thu Mar 14 2013  Jack Magne <jmagne@rehdat.com>= 1.1.0-25.1
+- Resolves: #922646 - esc ceased working after Firefox/xulrunner update to 17 and above series 
 * Wed Mar 28 2012  Jack Magne <jmagne@redhat.com>= 1.1.0-24.2
 - Resolves: #807806 - ESC crashes when an enrolled smart card is inserted.
 * Wed Mar 21 2012  Jack Magne <jmagne@redhat.com>= 1.1.0-24.1

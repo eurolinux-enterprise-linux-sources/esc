@@ -1,12 +1,12 @@
 diff -up ./esc/src/app/xul/esc/application.ini.fix20 ./esc/src/app/xul/esc/application.ini
---- ./esc/src/app/xul/esc/application.ini.fix20	2012-03-28 15:30:53.979090029 -0700
-+++ ./esc/src/app/xul/esc/application.ini	2012-03-28 15:31:25.194081120 -0700
+--- ./esc/src/app/xul/esc/application.ini.fix20	2012-03-26 18:21:09.367535473 -0700
++++ ./esc/src/app/xul/esc/application.ini	2012-03-26 18:21:40.082080197 -0700
 @@ -25,11 +25,11 @@ Vendor=RedHat
  Name=ESC
  ;
  ; This field specifies your application's version.  This field is optional.
 -Version=1.1.0-24
-+Version=1.1.0-24.2
++Version=1.1.0-25
  ;
  ; This field specifies your application's build ID (timestamp).  This field is
  ; required.
@@ -15,9 +15,24 @@ diff -up ./esc/src/app/xul/esc/application.ini.fix20 ./esc/src/app/xul/esc/appli
  ;
  ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
  ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+@@ -41,12 +41,12 @@ ID={6380471b-1924-4b48-b652-49f42951af86
+ ; This field is required.  It specifies the minimum Gecko version that this
+ ; application requires.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MinVersion=2.0.0
++MinVersion=10.0.0
+ ;
+ ; This field is optional.  It specifies the maximum Gecko version that this
+ ; application requires.  It should be specified if your application uses
+ ; unfrozen interfaces.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MaxVersion=50.0.0
++MaxVersion=10.9.9
+ 
+ [Shell]
 diff -up ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix20 ./esc/src/app/xul/esc/chrome/content/esc/password.xul
---- ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix20	2012-03-28 15:31:42.220151429 -0700
-+++ ./esc/src/app/xul/esc/chrome/content/esc/password.xul	2012-03-28 15:32:04.417035175 -0700
+--- ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix20	2012-03-26 18:31:05.043142962 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/password.xul	2012-03-26 18:26:58.125141066 -0700
 @@ -23,12 +23,10 @@
      id="esc-window"
      title="&getESCPassword;"
@@ -32,8 +47,8 @@ diff -up ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix20 ./esc/src/a
  <spacer class = "horSpacerVeryShort"/>
   <grid>
 diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix20 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
---- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix20	2012-03-28 15:32:33.893227528 -0700
-+++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2012-03-28 15:33:37.470027482 -0700
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix20	2012-03-26 18:29:18.407012061 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2012-03-26 18:29:37.005066478 -0700
 @@ -424,6 +424,12 @@ alert("exception " + e);
     }
  }

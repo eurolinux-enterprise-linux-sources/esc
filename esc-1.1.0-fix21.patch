@@ -1,0 +1,760 @@
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix21 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix21	2013-03-18 18:34:05.665894924 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2013-03-18 18:34:05.677950976 -0700
+@@ -112,9 +112,10 @@ endif
+ 
+ ifeq ($(OS_ARCH),Linux)
+ CPPFLAGS += -fno-rtti \
++                -DXPCOM_GLUE_USE_NSPR \
+                 -fno-exceptions \
+                 -fshort-wchar -fPIC -std=gnu++0x
+-GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib    $(GECKO_SDK_PATH)/lib/libxpcomglue.a -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl
++GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib   -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl -L$(GECKO_SDK_PATH)/lib -lxpcomglue_s -lxpcom
+ endif
+ 
+ ifeq ($(OS_ARCH),WINNT)
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix21 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix21	2013-03-18 18:34:05.666893404 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2013-03-18 18:34:05.677950976 -0700
+@@ -21,7 +21,6 @@
+ #include "rhCoolKey.h"
+ #include "CoolKey.h"
+ #include "nsMemory.h"
+-
+ #include "nsXPCOM.h"
+ #include "nsIComponentManager.h"
+ #include "nsIComponentRegistrar.h"
+@@ -34,7 +33,7 @@
+ #include "nsIPrefBranch.h"
+ #include "nsIPrefService.h"
+ #include "nsCOMPtr.h"
+-#include "nsIProxyObjectManager.h"
++#include "nsThreadUtils.h"
+ #include "nsIObserver.h"
+ #include "nsIObserverService.h"
+ #include "nsXPCOMGlue.h"
+@@ -89,6 +88,7 @@ std::list<CoolKeyNode*>rhCoolKey::gASCAv
+ std::list< nsCOMPtr <rhIKeyNotify>  > rhCoolKey::gNotifyListeners;
+ 
+ PRLock* rhCoolKey::certCBLock=NULL;
++PRLock* rhCoolKey::eventLock= NULL;
+ 
+ PRBool rhCoolKey::gAutoEnrollBlankTokens = PR_FALSE; 
+ 
+@@ -131,6 +131,71 @@ class CoolKeyShutdownObserver : public n
+    return NS_OK;
+  }
+ 
++class CoolKeyResultTask  : public  nsRunnable
++{
++public:
++  ~CoolKeyResultTask() {
++
++      char tBuff[56];
++      PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s ~CoolKeyResultTask thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
++
++      if (mKeyID) {
++          free(mKeyID);
++      }
++
++      if (mStrData) {
++          free(mStrData);
++      }
++
++  }
++
++  CoolKeyResultTask(unsigned long keyType, const char *keyID, unsigned long keyState,
++                    unsigned long data, const char *strData, rhICoolKey *listener)
++    : mKeyType(keyType), mKeyState(keyState),
++      mData(data), mListener(listener)
++  {
++
++     mStrData = NULL;
++     mKeyID   = NULL;
++
++     MOZ_ASSERT(!NS_IsMainThread());
++
++     if (keyID) {
++         mKeyID = strdup(keyID);
++     }
++
++     if (strData) {
++         mStrData = strdup(strData);
++     }
++
++     char tBuff[56];
++
++     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s CoolKeyResultTask::CoolKeyResultTask thread:   %p keyID %s \n",GetTStamp(tBuff,56),PR_GetCurrentThread(),mKeyID));
++
++  }
++
++
++  NS_IMETHOD Run() {
++    MOZ_ASSERT(NS_IsMainThread());
++
++     char tBuff[56];
++     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s CoolKeyResultTask::Run thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
++
++     if (mListener != NULL) {
++         mListener->RhNotifyKeyStateChange(mKeyType, mKeyID, mKeyState,
++                        mData, mStrData);
++     }
++   }
++
++private:
++   unsigned long mKeyType;
++   char *mKeyID;
++   unsigned long mKeyState;
++   unsigned long mData;
++   char *mStrData;
++   rhICoolKey *mListener;
++};
++
+ unsigned int
+ ASCCalcBase64DecodedLength(const char *aBase64Str)
+ {
+@@ -171,7 +236,7 @@ ASCCalcBase64EncodedLength(unsigned int 
+ }
+ 
+ rhCoolKey::rhCoolKey()
+-:mJsNotify(nsnull),mProxy(nsnull)
++:mJsNotify(NULL),mProxy(NULL)
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::rhCoolKey: %p \n",GetTStamp(tBuff,56),this));
+@@ -187,7 +252,7 @@ rhCoolKey::rhCoolKey()
+     }
+ 
+     #ifdef XP_WIN32 
+-        mCSPListener = nsnull;
++        mCSPListener = NULL;
+     #endif
+ 
+     certCBLock = PR_NewLock();
+@@ -197,6 +262,13 @@ rhCoolKey::rhCoolKey()
+         exit(1);
+     }
+ 
++    eventLock = PR_NewLock();
++
++    if(!eventLock) {
++       PR_LOG( coolKeyLog, PR_LOG_ERROR, ("%s Failed to create event lock exiting! \n", GetTStamp(tBuff,56)));
++       exit(1);
++    }
++
+     PRBool res = InitInstance();
+ 
+     if(res == PR_FALSE)
+@@ -218,6 +290,11 @@ rhCoolKey::~rhCoolKey()
+     if(certCBLock) {
+         PR_DestroyLock(certCBLock);
+     }
++
++    if(eventLock) {
++        PR_DestroyLock(eventLock);
++    }
++
+ }
+ 
+ void rhCoolKey::ShutDownInstance()
+@@ -233,14 +310,14 @@ void rhCoolKey::ShutDownInstance()
+ 
+        NS_RELEASE(mProxy);
+ 
+-       mProxy = nsnull;
++       mProxy = NULL;
+     }
+ 
+     #ifdef XP_WIN32
+ 
+     if(mCSPListener)  {
+         RemoveNotifyKeyListener(mCSPListener);
+-        mCSPListener = nsnull;
++        mCSPListener = NULL;
+     }
+     #endif
+     ClearNotifyKeyList();
+@@ -252,8 +329,16 @@ HRESULT rhCoolKey::Dispatch( rhICoolKey 
+     unsigned long keyType, const char *keyID, unsigned long keyState,
+     unsigned long data, const char *strData)
+ {
+-    return listener->RhNotifyKeyStateChange(keyType,keyID, keyState, 
+-			data, strData);
++    char tBuff[56];
++
++    PR_Lock(eventLock);
++    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::Dispatch: thead:  %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
++    nsCOMPtr<nsIRunnable>  result = new CoolKeyResultTask(keyType, keyID,keyState, data, strData, listener);
++
++    NS_DispatchToMainThread(result);
++
++    PR_Unlock(eventLock);
++    return  1;
+ }
+ 
+ HRESULT rhCoolKey::Reference( rhICoolKey *listener )
+@@ -394,9 +479,9 @@ SECStatus rhCoolKey::badCertHandler(void
+ 
+        if( (nsrv == NS_OK) && overrideResult) {
+             SECItem oid;
+-            oid.data = nsnull;
++            oid.data = NULL;
+             oid.len = 0;
+-            SECStatus srv = SEC_StringToOID(nsnull, &oid,
++            SECStatus srv = SEC_StringToOID(NULL, &oid,
+                     hashAlg.get(), hashAlg.Length());
+ 
+             if (srv != SECSuccess)  {
+@@ -492,12 +577,12 @@ HRESULT rhCoolKey::doSetCoolKeyConfigVal
+ 
+     nsCOMPtr<nsIPrefBranch> pBranch;
+ 
+-    pref->GetBranch(nsnull,getter_AddRefs(pBranch));
++    pref->GetBranch(NULL,getter_AddRefs(pBranch));
+ 
+     if(pBranch)
+     {
+       pBranch->SetCharPref(aName, aValue);
+-      pref->SavePrefFile(nsnull);
++      pref->SavePrefFile(NULL);
+     }
+ 
+     return S_OK;
+@@ -533,24 +618,6 @@ PRBool rhCoolKey::InitInstance()
+ 
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::InitInstance %p \n",GetTStamp(tBuff,56),this));
+ 
+-    char xpcom_path[4096];
+-    xpcom_path[0] = 0;
+-
+-
+-    char *grePath = (char *) GETSTRING(GECKO_BIN_PATH);
+-
+-
+-    if (grePath != NULL) {
+-        snprintf(xpcom_path,4096,"%s/%s",grePath,"libxpcom.so");
+-    }
+-
+-    char *lib_name =(char *) XPCOM_LIB_NAME ;
+-
+-  
+-    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::xpcom_path %s \n",GetTStamp(tBuff,56),xpcom_path)); 
+-
+-    XPCOMGlueStartup(xpcom_path);
+-
+     nssComponent
+     = do_GetService(PSM_COMPONENT_CONTRACTID); 
+ 
+@@ -627,22 +694,8 @@ PRBool rhCoolKey::InitInstance()
+ 
+ rhICoolKey* rhCoolKey::CreateProxyObject()
+ {
+-    char tBuff[56];
+-    rhICoolKey *proxyObject = NULL;
+-
+-    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::CreateProxyObject: \n",GetTStamp(tBuff,56)));
+-
+-    nsCOMPtr<nsIProxyObjectManager> manager =
+-            do_GetService(NS_XPCOMPROXY_CONTRACTID);
+-
+-    PR_ASSERT(manager);
+-
+-
+-    manager->GetProxyForObject(NULL, NS_GET_IID(rhICoolKey), this, NS_PROXY_SYNC | NS_PROXY_ALWAYS, (void**)&proxyObject);
+-
+-    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::CreateProxyObject: original: %p proxy %p  \n",GetTStamp(tBuff,56),this,proxyObject));
+-
+-    return proxyObject;
++    // Now we are using nsRunnable, no more proxy object manager.
++    return this;
+    
+ }
+ 
+@@ -734,7 +787,7 @@ rhIKeyNotify* rhCoolKey::GetNotifyKeyLis
+ 
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::GetNotifyKeyListener:  looking for %p returning NULL. \n",GetTStamp(tBuff,56),listener));
+ 
+-  return nsnull;
++  return NULL;
+ }
+ 
+ void rhCoolKey::AddNotifyKeyListener(rhIKeyNotify *listener)
+diff -up ./esc/src/app/xpcom/rhCoolKey.h.fix21 ./esc/src/app/xpcom/rhCoolKey.h
+--- ./esc/src/app/xpcom/rhCoolKey.h.fix21	2013-03-18 18:34:05.667939238 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.h	2013-03-18 18:34:05.677950976 -0700
+@@ -119,6 +119,7 @@ protected:
+     static std::list< nsCOMPtr <rhIKeyNotify> > gNotifyListeners;
+ 
+     static PRLock* certCBLock;
++    static PRLock* eventLock;
+ 
+     rhICoolKey* mProxy;
+ 
+diff -up ./esc/src/app/xpcom/rhICoolKey.idl.fix21 ./esc/src/app/xpcom/rhICoolKey.idl
+--- ./esc/src/app/xpcom/rhICoolKey.idl.fix21	2013-03-18 18:34:05.617895759 -0700
++++ ./esc/src/app/xpcom/rhICoolKey.idl	2013-03-18 18:34:05.677950976 -0700
+@@ -49,11 +49,11 @@ interface rhICoolKey: nsISupports
+ 
+     void CancelCoolKeyOperation(in unsigned long aKeyType, in string aKeyID);
+ 
+-    void GetAvailableCoolKeys(out PRUint32 count,
++    void GetAvailableCoolKeys(out unsigned long count,
+                      [retval, array, size_is(count)] out string str);
+ 
+      void GetCoolKeyCertNicknames(in unsigned long aKeyType, in string aKeyID,
+-      out PRUint32 count, [retval, array, size_is(count)] out string str);
++      out unsigned long count, [retval, array, size_is(count)] out string str);
+ 
+     
+     unsigned long GetCoolKeyStatus(in unsigned long  aKeyType,in string aKeyID);
+diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix21 ./esc/src/app/xpcom/tray/rhLinuxTray.cpp
+--- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix21	2013-03-18 18:34:05.669021907 -0700
++++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2013-03-18 18:34:05.677950976 -0700
+@@ -690,7 +690,7 @@ rhITrayWindNotify* rhTray::GetTrayWindNo
+ 
+     PR_LOG( trayLog, PR_LOG_DEBUG, ("%s rhCoolKey::GetNotifyKeyListener:  looking for %p returning NULL. \n",GetTStamp(tBuff,56),listener));
+ 
+-    return nsnull;
++    return NULL;
+ }
+ 
+ int rhTray::GetTrayWindNotifyListSize()
+diff -up ./esc/src/app/xul/esc/application.ini.fix21 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix21	2013-03-18 18:34:48.988044644 -0700
++++ ./esc/src/app/xul/esc/application.ini	2013-03-18 18:35:06.622074645 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-25
++Version=1.1.0-25.1
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001025
++BuildID=0000001026
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+@@ -47,6 +47,6 @@ MinVersion=10.0.0
+ ; application requires.  It should be specified if your application uses
+ ; unfrozen interfaces.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MaxVersion=10.9.9
++MaxVersion=50.9.9
+ 
+ [Shell]
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix21 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix21	2013-03-18 18:34:05.670910892 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2013-03-18 18:34:05.679893392 -0700
+@@ -133,7 +133,6 @@ jsNotify.prototype = {
+   var gNotify=null;
+ 
+   try {
+-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey = Components.classes["@redhat.com/rhCoolKey;1"].getService();
+     netkey = netkey.QueryInterface(Components.interfaces.rhICoolKey);
+     gNotify = new jsNotify;
+@@ -152,7 +151,6 @@ function cleanup()
+ {
+     TrayRemoveWindow(null);
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       netkey.rhCoolKeyUnSetNotifyCallback(gNotify);
+     } catch(e) {
+      MyAlert(getBundleString("errorUniversalXPConnect")  + e);
+@@ -425,7 +423,6 @@ function commitConfigValues()
+              var res = 0;
+ 
+              try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+                 res = netkey.SetCoolKeyConfigValue("esc.tps.url",tps_uri_value);
+ 
+             } catch(e) {
+@@ -434,7 +431,6 @@ function commitConfigValues()
+             }
+ 
+             try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+                 res = netkey.SetCoolKeyConfigValue("esc.enroll.ui.url",esc_enroll_value);
+                 grantPrivilegesURL(esc_enroll_value);
+@@ -466,7 +462,6 @@ function InitializeConfigUI()
+    if(netkey)
+    {
+              try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+                 tps_uri = netkey.GetCoolKeyConfigValue("esc.tps.url");
+ 
+@@ -487,7 +482,6 @@ function InitializeConfigUI()
+         var esc_enroll_uri = null;
+ 
+         try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     
+                 esc_enroll_uri = netkey.GetCoolKeyConfigValue("esc.enroll.ui.url");
+     
+@@ -550,7 +544,6 @@ function CoolKeySetDataValue(aKeyType,aK
+         if(netkey)
+         {
+              try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+                 netkey.SetCoolKeyDataValue(aKeyType,aKeyID,name,value);
+ 
+@@ -567,7 +560,6 @@ function CoolKeySetTokenPin(pin)
+         if(netkey)
+         {
+              try { 
+-                netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+                 netkey.SetCoolKeyDataValue(gCurKeyType,gCurKeyID,"TokenPin",pin);
+ 
+             } catch(e) {
+@@ -581,7 +573,6 @@ function CoolKeySetUidPassword(uid,pwd)
+       if(netkey)
+       {
+           try {
+-              netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+               netkey.SetCoolKeyDataValue(gCurKeyType,gCurKeyID,"UserId",uid);
+               netkey.SetCoolKeyDataValue(gCurKeyType,gCurKeyID,"Password",pwd);
+ 
+@@ -646,7 +637,6 @@ function ReportException(msg, e)
+ function GetCoolKeyStatus(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyStatus(keyType, keyID);
+   } catch (e) {
+     ReportException(getBundleString("errorCoolKeyGetStatus"), e);
+@@ -665,7 +655,6 @@ function ConfigValueWithKeyID(keyID,conf
+ function GetCoolKeyPolicy(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyPolicy(keyType, keyID);
+   } catch (e) {
+     //ReportException(getBundleString("errorCoolKeyGetPolicy"), e);
+@@ -676,7 +665,6 @@ function GetCoolKeyPolicy(keyType, keyID
+ function GetCoolKeyRequiresAuth(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyRequiresAuthentication(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCoolKeyRequiresAuth"), e);
+@@ -687,7 +675,6 @@ function GetCoolKeyRequiresAuth(keyType,
+ function AuthenticateCoolKey(keyType, keyID,aPIN)
+ {   
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.AuthenticateCoolKey(keyType, keyID,"netscape");
+   } catch(e) {
+     ReportException(getBundleString("errorAuthCoolKey"), e);
+@@ -698,7 +685,6 @@ function AuthenticateCoolKey(keyType, ke
+ function GetCoolKeyIsAuthed(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyIsAuthenticated(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCoolKeyIsAuth"), e);
+@@ -717,7 +703,6 @@ function GetCoolKeyIssuer(keyType,keyID)
+     if(!issuer && (GetStatusForKeyID(keyType, keyID) == getBundleString("statusEnrolled")))
+     {
+         try {
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+             issuer = netkey.GetCoolKeyIssuer(keyType,keyID);
+ 
+             var issuer_url = ConfigValueWithKeyID(keyID,KEY_ISSUER_URL);
+@@ -757,7 +742,6 @@ function GetCoolKeyIssuedTo(keyType,keyI
+     var issuedTo = null;
+ 
+     try {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+         issuedTo = netkey.GetCoolKeyIssuedTo(keyType,keyID);
+ 
+     } catch (e)
+@@ -895,7 +879,6 @@ function GetCoolKeyCertNicknames(aKeyTyp
+ {
+   try {
+     var nameArr;
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var inArray = netkey.GetCoolKeyCertNicknames(aKeyType,aKeyId, {} );
+       nameArr = new Array(inArray.length);
+       var i;
+@@ -915,7 +898,6 @@ function GetCoolKeyVersion()
+     var result = null;
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       result = netkey.GetCoolKeyVersion();
+     return result;
+   } catch(e) {
+@@ -928,7 +910,6 @@ function GetCoolKeyCertInfo(aKeyType,aKe
+ {
+   try {
+     var info = null;
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       info = netkey.GetCoolKeyCertInfo(aKeyType,aKeyId, aCertNickname );
+       return info;
+   } catch(e) {
+@@ -942,7 +923,6 @@ function GetAvailableCoolKeys()
+   try {
+     var keyArr;
+ 
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var inArray = netkey.GetAvailableCoolKeys( {} );
+       keyArr = new Array(inArray.length);
+       var i;
+@@ -963,7 +943,6 @@ function CoolKeyLogMsg(aLogLevel,aMessag
+         return;
+ 
+     try { 
+-         netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+          netkey.CoolKeyLogMsg(aLogLevel,aMessage);
+          } catch(e) {
+          }
+@@ -972,7 +951,6 @@ function CoolKeyLogMsg(aLogLevel,aMessag
+ function ChallengeCoolKey(keyType, keyID, data)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.ChallengeCoolKey(keyType, keyID, data);
+   } catch(e) {
+     return [];
+@@ -982,7 +960,6 @@ function ChallengeCoolKey(keyType, keyID
+ function EnrollCoolKey(keyType, keyID, enrollmentType, screenname, pin,screennamepwd,tokencode)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.EnrollCoolKey(keyType, keyID, enrollmentType, screenname, pin,screennamepwd,tokencode);
+   } catch(e) {
+     ReportException(getBundleString("errorEnollCoolKey"), e);
+@@ -995,7 +972,6 @@ function EnrollCoolKey(keyType, keyID, e
+ function GetCoolKeyIsEnrolled(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyIsEnrolled(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCoolKeyIsEnrolled"), e);
+@@ -1006,7 +982,6 @@ function GetCoolKeyIsEnrolled(keyType, k
+ function ResetCoolKeyPIN(keyType, keyID, screenname, pin,screennamepwd)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.ResetCoolKeyPIN(keyType, keyID, screenname, pin,screennamepwd);
+   } catch(e) {
+     ReportException(getBundleString("errorResetCoolKeyPIN"), e);
+@@ -1017,7 +992,6 @@ function ResetCoolKeyPIN(keyType, keyID,
+ function FormatCoolKey(keyType, keyID, type, screenname, pin,screennamepwd,tokencode)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.FormatCoolKey(keyType, keyID, type, screenname, pin,screennamepwd,tokencode);
+   } catch(e) {
+     ReportException(getBundleString("errorFormatCoolKey"), e);
+@@ -1029,7 +1003,6 @@ function FormatCoolKey(keyType, keyID, t
+ function CancelCoolKeyOperation(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.CancelCoolKeyOperation(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCancelCoolKey"), e);
+@@ -3654,7 +3627,6 @@ function getESCEnrollmentUI()
+    if(netkey)
+    {
+         try {
+-                netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+             esc_enroll_uri = netkey.GetCoolKeyConfigValue("esc.enroll.ui.url");
+ 
+             } catch(e) {
+@@ -3693,7 +3665,6 @@ function grantPrivilegesURL(aURL)
+     if(prePath)
+     {
+         try {
+-                netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             res = netkey.SetCoolKeyConfigValue("capability.principal.codebase.p0.id",prePath);
+ 
+@@ -3717,7 +3688,6 @@ function DoCoolKeySetConfigValue(configV
+    if(netkey)
+    {
+       try {
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             result = netkey.SetCoolKeyConfigValue(configValue,newValue);
+ 
+@@ -3740,7 +3710,6 @@ function DoCoolKeyGetConfigValue(configV
+    if(netkey)
+    {
+       try {
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             result = netkey.GetCoolKeyConfigValue(configValue);
+ 
+@@ -3792,7 +3761,6 @@ function DoGetCoolKeyIsReallyCoolKey(key
+         return 0;
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var isCool =  netkey.GetCoolKeyIsReallyCoolKey(keyType, keyID);
+ 
+       return isCool;
+@@ -3825,7 +3793,6 @@ function DoCoolKeyGetIssuerUrl(keyType,k
+     }
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+       var tries = 0;
+       while(tries < 3 )  
+@@ -3909,7 +3876,6 @@ function DoCoolKeyGetATR(keyType,keyID)
+ {
+     var atr = null;
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       atr =  netkey.GetCoolKeyATR(keyType, keyID);
+     } catch (e) {
+       return atr;
+@@ -3926,7 +3892,6 @@ function DoCoolKeyGetTokenName(keyType,k
+ 
+     var name = null;
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       name =  netkey.GetCoolKeyTokenName(keyType, keyID);
+     } catch (e) {
+       return name;
+@@ -3941,7 +3906,6 @@ function DoGetCoolKeyGetAppletVer(keyTyp
+     var ver = -1;
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var ver  =  netkey.GetCoolKeyGetAppletVer(keyType, keyID,isMajor);
+     } catch (e) {
+       ver = -1;
+@@ -4634,7 +4598,6 @@ function DoMyAlert(message,title)
+ {
+    if(!message || !title)
+        return;     try {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"].getService(Components.interfaces.nsIPromptService); 
+ 
+        prompts.alert(window,title,message);
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix21 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix21	2013-03-18 18:34:05.675894440 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2013-03-18 18:34:05.679893392 -0700
+@@ -63,7 +63,6 @@ jsWindNotify.prototype = {
+ 
+  // GECKO ONLY initialization
+ try {
+-   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+    gTray =  Components.classes["@redhat.com/rhTray;1"].getService();
+ 
+ 
+@@ -129,7 +128,6 @@ function GetTrayIsInitialized()
+ 
+    try
+    {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         rv = gTray.isInitializedAlready();
+ 
+@@ -155,7 +153,6 @@ function ShowAllWindows()
+ 
+     try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         gTray.showall();
+ 
+@@ -175,7 +172,6 @@ function HideAllWindows()
+ 
+     try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         gTray.hideall();
+ 
+@@ -196,7 +192,6 @@ function ShowWindow()
+ 
+     try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         gTray.show(gBaseWindow);
+ 
+@@ -216,7 +211,6 @@ function HideWindow()
+         
+     try {
+          
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+         
+         gTray.hide(gBaseWindow);
+         
+@@ -235,7 +229,6 @@ function TrayRemoveWindowNotify()
+     {
+          try {
+ 
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             gTray.unsetwindnotifycallback(gWindNotify);
+             
+@@ -254,7 +247,6 @@ function TrayRemoveWindow(doPreserveNoti
+     {
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             gTray.remove(gBaseWindow);
+ 
+@@ -277,7 +269,6 @@ function TrayAddWindow()
+ 
+          try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             gTray.add(gBaseWindow);
+ 
+@@ -304,7 +295,6 @@ function TraySendNotificationMessage(aTi
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+ 
+ 
+         gTray.sendnotification(aTitle,aMessage,aSeverity,aTimeout,aIcon);
+@@ -329,7 +319,6 @@ function TrayHideNotificationIcon()
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+ 
+         gTray.hideicon();
+ 
+@@ -361,7 +350,6 @@ function TrayShowNotificationIcon()
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+         gTray.settooltipmsg(getBundleString("escTitle"));
+         gTray.showicon();
+ 
+@@ -383,7 +371,6 @@ function TrayShowTooltip(aMessage)
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+ ;
+         gTray.settooltipmsg(aMessage);
+ 
+@@ -413,7 +400,6 @@ function TrayChangeMenuItemText(aIndex, 
+     if(gTray && gBaseWindow)
+     {
+         try {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+         gTray.setmenuitemtext(aIndex,aText);
+         gTray.showicon();
+         } catch(e) {

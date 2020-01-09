@@ -1,0 +1,772 @@
+diff -up ./esc/src/app/daemon/manifest.mn.fix9 ./esc/src/app/daemon/manifest.mn
+--- ./esc/src/app/daemon/manifest.mn.fix9	2011-03-24 12:35:31.481712082 -0700
++++ ./esc/src/app/daemon/manifest.mn	2011-03-24 12:35:39.758712086 -0700
+@@ -37,7 +37,7 @@ DEFINES += $(shell pkg-config --cflags x
+ CPPFLAGS		+= $(DEFINES) -g
+ 
+ LDFLAGS += -lstdc++ -L$(CORE_DIST)/$(OBJDIR)/lib -L$(XULRUNNER_LIBS_LDFLAGS)  -lnss3 -lnspr4  -lssl3 -lckyapplet $(shell pkg-config --libs xft) 
+-LDFLAGS +=  -lckymanager -lhttpchunked -lm  -lnss3 -lplc4 -lplds4
++LDFLAGS +=  -lckymanager -lhttpchunked -lm  -lnss3 -lplc4 -lplds4 -lX11
+ # MODULE public and private header  directories are implicitly REQUIRED.
+ 
+ CPPSRCS = \
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix9 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix9	2011-03-24 12:37:10.273712093 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2011-03-24 12:37:18.813712092 -0700
+@@ -70,6 +70,7 @@
+ 
+ #define PSM_COMPONENT_CONTRACTID "@mozilla.org/psm;1"
+ #define NS_CERTOVERRIDE_CONTRACTID "@mozilla.org/security/certoverride;1"
++#define RH_COOLKEY_CONTRACTID "@redhat.com/rhCoolKey;1"
+ 
+ static const nsIID kIModuleIID = NS_IMODULE_IID;
+ static const nsIID kIFactoryIID = NS_IFACTORY_IID;
+@@ -1711,297 +1712,36 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyVersi
+ 
+ NS_GENERIC_FACTORY_CONSTRUCTOR(rhCoolKey)
+ 
+-NS_IMPL_ISUPPORTS1(rhCoolKey,rhICoolKey) 
+-
+-// Implement full module and factory dance so we can see what is going on 
+-
+-class rhCoolKeyFactory: public nsIFactory{
+-private:
+-nsrefcnt mRefCnt;
+-public:
+-rhCoolKeyFactory();
+-virtual ~rhCoolKeyFactory();
+-
+-NS_IMETHOD QueryInterface(const nsIID &aIID, void **aResult);
+-NS_IMETHOD_(nsrefcnt) AddRef(void);
+-NS_IMETHOD_(nsrefcnt) Release(void);
+-
+-NS_IMETHOD CreateInstance(nsISupports *aOuter, const nsIID & iid, void * *result);
+-NS_IMETHOD LockFactory(PRBool lock);
+-
++// Build a table of ClassIDs (CIDs) which are implemented by this module. CIDs
++// // should be completely unique UUIDs.
++// // each entry has the form { CID, service, factoryproc, constructorproc }
++// // where factoryproc is usually NULL.
++static const mozilla::Module::CIDEntry kCoolKeyCIDs[] = {
++     { &kCoolKeyCID, false, NULL, rhCoolKeyConstructor },
++         { NULL }
++         };
++
++// Build a table which maps contract IDs to CIDs.
++// // A contract is a string which identifies a particular set of functionality. In some
++// // cases an extension component may override the contract ID of a builtin gecko component
++// // to modify or extend functionality.
++//
++static const mozilla::Module::ContractIDEntry kCoolKeyContracts[] = {
++     { RH_COOLKEY_CONTRACTID, &kCoolKeyCID },
++     { NULL }
+ };
+ 
+-rhCoolKeyFactory::rhCoolKeyFactory()
+-{
+-mRefCnt = 0;
+-}
+-rhCoolKeyFactory::~rhCoolKeyFactory()
+-{
+-}
+-
+-NS_IMETHODIMP rhCoolKeyFactory::QueryInterface(const nsIID &aIID,
+-void **aResult)
+-{
+-if (aResult == NULL) {
+-return NS_ERROR_NULL_POINTER;
+-}
+-*aResult = NULL;
+-if (aIID.Equals(kISupportsIID)) {
+-*aResult = (void *) this;
+-}
+-else
+-if (aIID.Equals(kIFactoryIID)) {
+-*aResult = (void *) this;
+-}
+-
+-if (*aResult == NULL) {
+-return NS_ERROR_NO_INTERFACE;
+-}
+-
+-AddRef();
+-return NS_OK;
+-}
+-
+-NS_IMETHODIMP_(nsrefcnt) rhCoolKeyFactory::AddRef()
+-{
+-return ++mRefCnt;
+-}
+-
+-
+-NS_IMETHODIMP_(nsrefcnt) rhCoolKeyFactory::Release()
+-{
+-if (--mRefCnt == 0) {
+-delete this;
+-return 0;
+-}
+-return mRefCnt;
+-}
+-
+-
+-NS_IMETHODIMP
+-rhCoolKeyFactory::CreateInstance(nsISupports *aOuter, const nsIID & iid, void * *result)
+-{
+-if (!result)
+-return NS_ERROR_INVALID_ARG;
+-
+-rhCoolKey* sample = new rhCoolKey();
+-if (!sample)
+-return NS_ERROR_OUT_OF_MEMORY;
+-
+-nsresult rv = sample->QueryInterface(iid, result);
+-
+-if (NS_FAILED(rv)) {
+-*result = nsnull;
+-delete sample;
+-}
+-
+-return rv;
+-}
+-
+-
+-NS_IMETHODIMP
+-rhCoolKeyFactory::LockFactory(PRBool lock)
+-{
+-return NS_ERROR_NOT_IMPLEMENTED;
+-}
+-
+-// Module implementation
+-class rhCoolKeyModule : public nsIModule
+-{
+-public:
+-rhCoolKeyModule();
+-virtual ~rhCoolKeyModule();
+-
+-// nsISupports methods:
+-NS_IMETHOD QueryInterface(const nsIID & uuid, void * *result);
+-NS_IMETHOD_(nsrefcnt) AddRef(void);
+-NS_IMETHOD_(nsrefcnt) Release(void);
+-
+-// nsIModule methods:
+-NS_IMETHOD GetClassObject(nsIComponentManager *aCompMgr, const nsCID & aClass, const nsIID & aIID, void * *aResult);
+-NS_IMETHOD RegisterSelf(nsIComponentManager *aCompMgr, nsIFile *aLocation, const char *aLoaderStr, const char *aType);
+-NS_IMETHOD UnregisterSelf(nsIComponentManager *aCompMgr, nsIFile *aLocation, const char *aLoaderStr);
+-NS_IMETHOD CanUnload(nsIComponentManager *aCompMgr, PRBool *_retval);
+-
+-private:
+-nsrefcnt mRefCnt;
++static const mozilla::Module kCoolKeyModule = {
++    mozilla::Module::kVersion,
++    kCoolKeyCIDs,
++    kCoolKeyContracts,
++    NULL 
+ };
+ 
++// The following line implements the one-and-only "NSModule" symbol exported from this
++// // shared library.
++ NSMODULE_DEFN(rhCoolKeyModule) = &kCoolKeyModule;
++//
+ 
+-//----------------------------------------------------------------------
+-
+-rhCoolKeyModule::rhCoolKeyModule()
+-{
+-mRefCnt = 0;
+-}
+-
+-rhCoolKeyModule::~rhCoolKeyModule()
+-{
+-}
+-
+-// nsISupports implemention
+-NS_IMETHODIMP_(nsrefcnt)
+-rhCoolKeyModule::AddRef(void)
+-{
+-char tBuff[56];
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::AddRef \n",GetTStamp(tBuff,56)));
+-++mRefCnt;
+-return mRefCnt;
+-}
+-
+-
+-NS_IMETHODIMP_(nsrefcnt)
+-rhCoolKeyModule::Release(void)
+-{
+-char tBuff[56];
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::Release : mRefCnt %d \n",GetTStamp(tBuff,56),mRefCnt - 1));
+---mRefCnt;
+-if (mRefCnt == 0) {
+-mRefCnt = 1; /* stabilize */
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::Release deleting Module \n",GetTStamp(tBuff,56)));
+-delete this;
+-return 0;
+-}
+-return mRefCnt;
+-}
+-
+-
+-NS_IMETHODIMP
+-rhCoolKeyModule::QueryInterface(REFNSIID aIID, void** aInstancePtr)
+-{
+-char tBuff[56];
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::QueryInterface \n",GetTStamp(tBuff,56)));
+-if ( !aInstancePtr )
+-return NS_ERROR_NULL_POINTER;
+-
+-nsISupports* foundInterface;
+-
+-if ( aIID.Equals(kIModuleIID) )
+-foundInterface = (nsIModule*) this;
+-
+-else if ( aIID.Equals(kISupportsIID) )
+-foundInterface = (nsISupports*) this;
+-
+-else
+-foundInterface = 0;
+-
+-if (foundInterface) {
+-foundInterface->AddRef();
+-*aInstancePtr = foundInterface;
+-return NS_OK;
+-}
+-
+-*aInstancePtr = foundInterface;
+-return NS_NOINTERFACE;
+-}
+-
+-
+-// Create a factory object for creating instances of aClass.
+-NS_IMETHODIMP
+-rhCoolKeyModule::GetClassObject(nsIComponentManager *aCompMgr,
+-const nsCID& aClass,
+-const nsIID& aIID,
+-void** result)
+-{
+-char tBuff[56];
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::GetClassObject \n",GetTStamp(tBuff,56)));
+-if (!kCoolKeyCID.Equals(aClass))
+-return NS_ERROR_FACTORY_NOT_REGISTERED;
+-
+-if (!result)
+-return NS_ERROR_INVALID_ARG;
+-
+-rhCoolKeyFactory* factory = new rhCoolKeyFactory();
+-if (!factory)
+-return NS_ERROR_OUT_OF_MEMORY;
+-
+-nsresult rv = factory->QueryInterface(aIID, result);
+-
+-if (NS_FAILED(rv)) {
+-*result = nsnull;
+-delete factory;
+-}
+-
+-return rv;
+-}
+-
+-
+-NS_IMETHODIMP
+-rhCoolKeyModule::RegisterSelf(nsIComponentManager *aCompMgr,
+-nsIFile* aPath,
+-const char* registryLocation,
+-const char* componentType)
+-{
+-
+-char tBuff[54];
+-nsIComponentRegistrar* compReg = nsnull;
+-
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::RegisterSelf \n",GetTStamp(tBuff,56)));
+-nsresult rv = aCompMgr->QueryInterface(kIComponentRegistrarIID, (void**)&compReg);
+-if (NS_FAILED(rv))
+-return rv;
+-
+-rv = compReg->RegisterFactoryLocation(kCoolKeyCID,
+-"CoolKey",
+-"@redhat.com/rhCoolKey",
+-aPath,
+-registryLocation,
+-componentType);
+-
+-compReg->Release();
+-
+-return rv;
+-}
+-
+-NS_IMETHODIMP
+-rhCoolKeyModule::UnregisterSelf(nsIComponentManager* aCompMgr,
+-nsIFile* aPath,
+-const char* registryLocation)
+-{
+-char tBuff[56];
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::UnregisterSelf \n",GetTStamp(tBuff,56)));
+-nsIComponentRegistrar* compReg = nsnull;
+-
+-nsresult rv = aCompMgr->QueryInterface(kIComponentRegistrarIID, (void**)&compReg);
+-if (NS_FAILED(rv))
+-return rv;
+-
+-rv = compReg->UnregisterFactoryLocation(kCoolKeyCID, aPath);
+-
+-compReg->Release();
+-
+-return rv;
+-}
+-
+-NS_IMETHODIMP
+-rhCoolKeyModule::CanUnload(nsIComponentManager *aCompMgr, PRBool *okToUnload)
+-{
+-*okToUnload = PR_FALSE; // we do not know how to unload.
+-return NS_OK;
+-}
+-
+-
+-//----------------------------------------------------------------------
+-
+-extern "C" NS_EXPORT nsresult NSGetModule(nsIComponentManager *servMgr,
+-nsIFile* location,
+-nsIModule** return_cobj)
+-{
+-nsresult rv = NS_OK;
+-
+-char tBuff[56];
+-PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKeyModule::NSGetModule \n",GetTStamp(tBuff,56)));
+-
+-// Create and initialize the module instance
+-rhCoolKeyModule *m = new rhCoolKeyModule();
+-if (!m) {
+-return NS_ERROR_OUT_OF_MEMORY;
+-}
++NS_IMPL_ISUPPORTS1(rhCoolKey,rhICoolKey) 
+ 
+-// Increase refcnt and store away nsIModule interface to m in return_cobj
+-rv = m->QueryInterface(kIModuleIID, (void**)return_cobj);
+-if (NS_FAILED(rv)) {
+-delete m;
+-}
+-return rv;
+-}
+diff -up ./esc/src/app/xpcom/rhCoolKey.h.fix9 ./esc/src/app/xpcom/rhCoolKey.h
+--- ./esc/src/app/xpcom/rhCoolKey.h.fix9	2011-03-24 12:40:07.291712102 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.h	2011-03-24 12:40:15.644712108 -0700
+@@ -19,7 +19,9 @@
+ #define RH_COOLKEY_H
+ 
+ #include "rhICoolKey.h"
+-#include "nsIGenericFactory.h"
++/*#include "nsIGenericFactory.h" */
++#include "mozilla/ModuleUtils.h"
++#include "nsIClassInfoImpl.h"
+ #include "nsEmbedString.h"
+ #include <list>
+ #include "nspr.h"
+diff -up ./esc/src/app/xpcom/rhICoolKey.idl.fix9 ./esc/src/app/xpcom/rhICoolKey.idl
+--- ./esc/src/app/xpcom/rhICoolKey.idl.fix9	2011-03-24 12:42:27.595712113 -0700
++++ ./esc/src/app/xpcom/rhICoolKey.idl	2011-03-24 12:42:39.069712124 -0700
+@@ -17,12 +17,11 @@
+ 
+ #include "nsISupports.idl"
+ #include "rhIKeyNotify.idl"
+-#include "nsIObserver.idl"
++//#include "nsIObserver.idl"
+ 
+-interface nsIDOMHTMLDocument;
+ [scriptable,uuid(ea54eee4-9548-4b63-b94d-c519ffc91d09)]
+ 
+-interface rhICoolKey: nsISupports
++interface rhICoolKey:nsISupports
+ {
+ 
+     void rhNotifyKeyStateChange(in unsigned long aKeyType, in string aKeyID,  in unsigned long aKeyState, in unsigned long aData, in string strData);
+diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix9 ./esc/src/app/xpcom/tray/rhLinuxTray.cpp
+--- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix9	2011-03-24 12:43:20.262712118 -0700
++++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2011-03-24 12:43:34.767712121 -0700
+@@ -18,14 +18,17 @@
+ #define FORCE_PR_LOG 1
+ 
+ #include "rhTray.h"
+-#include "nsIGenericFactory.h"
++#include "mozilla/ModuleUtils.h"
+ #include <prlog.h>
+ #include "notifytray.h"
+ #include "nsIStringBundle.h"
+ #include <gdk/gdkx.h>
+ #include <stdlib.h>
+ 
+-NS_IMPL_ISUPPORTS1(rhTray, rhITray)
++#define RH_COOLKEY_TRAY_CONTRACTID "@redhat.com/rhTray;1"
++
++static const nsCID kCoolKeyTrayCID = RH_TRAY_CID;
++
+ 
+ GtkWidget* rhTray::mWnd = NULL;
+ GtkWidget* rhTray::mIconMenu = NULL;
+@@ -861,15 +864,36 @@ gboolean rhTrayWindowListener::WndDelete
+ NS_GENERIC_FACTORY_CONSTRUCTOR(rhTray)
+ 
+ 
+-//rhTray Module Implementation
++// Build a table of ClassIDs (CIDs) which are implemented by this module. CIDs
++// // // should be completely unique UUIDs.
++// // // each entry has the form { CID, service, factoryproc, constructorproc }
++// // // where factoryproc is usually NULL.
++
++static const mozilla::Module::CIDEntry kCoolKeyTrayCIDs[] = {
++      { &kCoolKeyTrayCID, false, NULL, rhTrayConstructor },
++               { NULL }
++};
+ 
+-static const nsModuleComponentInfo components[] =
+-{
+-  { "rhTray",
+-    RH_TRAY_CID,
+-    "@redhat.com/rhTray",
+-    rhTrayConstructor
+-  }
++// Build a table which maps contract IDs to CIDs.
++// A contract is a string which identifies a particular set of functionality. In some
++// cases an extension component may override the contract ID of a builtin gecko component
++// to modify or extend functionality.
++
++static const mozilla::Module::ContractIDEntry kCoolKeyTrayContracts[] = {
++    { RH_COOLKEY_TRAY_CONTRACTID, &kCoolKeyTrayCID },
++    { NULL }
+ };
+ 
+-NS_IMPL_NSGETMODULE(rhTrayModule, components)
++static const mozilla::Module kCoolKeyTrayModule = {
++    mozilla::Module::kVersion,
++    kCoolKeyTrayCIDs,
++    kCoolKeyTrayContracts,
++   NULL
++};
++
++// The following line implements the one-and-only "NSModule" symbol exported from this
++// shared library.
++NSMODULE_DEFN(rhCoolKeyTrayModule) = &kCoolKeyTrayModule;
++
++NS_IMPL_ISUPPORTS1(rhTray,rhITray)
++
+diff -up ./esc/src/app/xpcom/tray/rhTray.h.fix9 ./esc/src/app/xpcom/tray/rhTray.h
+--- ./esc/src/app/xpcom/tray/rhTray.h.fix9	2011-03-24 12:44:10.035712119 -0700
++++ ./esc/src/app/xpcom/tray/rhTray.h	2011-03-24 12:44:19.059712129 -0700
+@@ -19,7 +19,8 @@
+ #define RH_TRAY_H
+ 
+ #include "rhITray.h"
+-#include "nsIGenericFactory.h"
++//#include "nsIGenericFactory.h"
++//#include mozilla/ModuleUtils.h
+ #include "nsEmbedString.h"
+ #include <list>
+ #include "nsCOMPtr.h"
+diff -up ./esc/src/app/xul/esc/application.ini.fix9 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix9	2011-03-24 12:45:51.087712126 -0700
++++ ./esc/src/app/xul/esc/application.ini	2011-03-24 12:46:01.780712129 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-12
++Version=1.1.0-13
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001012
++BuildID=0000001013
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+@@ -41,12 +41,12 @@ ID={6380471b-1924-4b48-b652-49f42951af86
+ ; This field is required.  It specifies the minimum Gecko version that this
+ ; application requires.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MinVersion=1.9
++MinVersion=1.99
+ ;
+ ; This field is optional.  It specifies the maximum Gecko version that this
+ ; application requires.  It should be specified if your application uses
+ ; unfrozen interfaces.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MaxVersion=1.99
++MaxVersion=2.99
+ 
+ [Shell]
+diff -up ./esc/src/app/xul/esc/chrome/chrome.manifest.fix9 ./esc/src/app/xul/esc/chrome/chrome.manifest
+--- ./esc/src/app/xul/esc/chrome/chrome.manifest.fix9	2011-03-24 12:52:14.601712157 -0700
++++ ./esc/src/app/xul/esc/chrome/chrome.manifest	2011-03-24 12:52:23.723712155 -0700
+@@ -1,19 +0,0 @@
+-# BEGIN COPYRIGHT BLOCK
+-# This Program is free software; you can redistribute it and/or modify it under
+-# the terms of the GNU General Public License as published by the Free Software
+-# Foundation; version 2 of the License.
+-#
+-# This Program is distributed in the hope that it will be useful, but WITHOUT
+-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+-# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License along with
+-# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
+-# Place, Suite 330, Boston, MA 02111-1307 USA.
+-#
+-# Copyright (C) 2005 Red Hat, Inc.
+-# All rights reserved.
+-# END COPYRIGHT BLOCK
+-
+-content esc content/esc/
+-locale esc en-US locale/en-US/
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix9 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix9	2011-03-24 12:52:49.995712156 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2011-03-24 12:52:59.829712160 -0700
+@@ -132,7 +132,7 @@ jsNotify.prototype = {
+ 
+   try {
+     netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+-    netkey = Components.classes["@redhat.com/rhCoolKey"].getService();
++    netkey = Components.classes["@redhat.com/rhCoolKey;1"].getService();
+     netkey = netkey.QueryInterface(Components.interfaces.rhICoolKey);
+     gNotify = new jsNotify;
+     netkey.rhCoolKeySetNotifyCallback(gNotify);
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix9 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix9	2011-03-24 12:53:21.344712157 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2011-03-24 12:53:28.456712159 -0700
+@@ -63,7 +63,7 @@ jsWindNotify.prototype = {
+  // GECKO ONLY initialization
+ try {
+    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+-   gTray =  Components.classes["@redhat.com/rhTray"].getService();
++   gTray =  Components.classes["@redhat.com/rhTray;1"].getService();
+ 
+ 
+       gTray = gTray.QueryInterface(Components.interfaces.rhITray);
+diff -up ./esc/src/app/xul/esc/chrome.manifest.fix9 ./esc/src/app/xul/esc/chrome.manifest
+--- ./esc/src/app/xul/esc/chrome.manifest.fix9	2011-03-24 12:49:14.983712140 -0700
++++ ./esc/src/app/xul/esc/chrome.manifest	2011-03-24 12:49:47.350712147 -0700
+@@ -0,0 +1,33 @@
++# BEGIN COPYRIGHT BLOCK
++# This Program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU General Public License as published by the Free Software
++# Foundation; version 2 of the License.
++#
++# This Program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License along with
++# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
++# Place, Suite 330, Boston, MA 02111-1307 USA.
++#
++# Copyright (C) 2005 Red Hat, Inc.
++# All rights reserved.
++# END COPYRIGHT BLOCK
++
++content esc chrome/content/esc/
++locale esc en-US chrome/locale/en-US/
++
++interfaces components/rhICoolKey.xpt
++interfaces components/rhIKeyNotify.xpt
++interfaces components/rhITray.xpt
++interfaces components/rhITrayWindNotify.xpt
++
++
++binary-component components/librhCoolKey.so
++binary-component components/librhTray.so
++
++
++component {36c65861-52a8-4ce9-aa3b-235b88216ed4}  components/escCLH.js
++contract  @redhat.com/esc-clh;1 {36c65861-52a8-4ce9-aa3b-235b88216ed4} 
++category command-line-handler escCLH @redhat.com/esc-clh;1 
+diff -up ./esc/src/app/xul/esc/components/escCLH.js.fix9 ./esc/src/app/xul/esc/components/escCLH.js
+--- ./esc/src/app/xul/esc/components/escCLH.js.fix9	2011-03-24 12:54:15.072712160 -0700
++++ ./esc/src/app/xul/esc/components/escCLH.js	2011-03-24 12:54:53.868712165 -0700
+@@ -2,6 +2,8 @@
+ * -myapp commandline handler; starts up My App.
+ */
+ 
++ Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
++
+  const nsIAppShellService    = Components.interfaces.nsIAppShellService;
+  const nsISupports           = Components.interfaces.nsISupports;
+  const nsICategoryManager    = Components.interfaces.nsICategoryManager;
+@@ -20,20 +22,26 @@
+   consoleService.logStringMessage("esc: " + message  + "\n");
+  }
+ 
++Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
++
+ /*
+ * Classes
+ */
++
++function escCLH() {}
+  
+- const escCLH = {
++  escCLH.prototype = {
++
++
++   contractID:  "@redhat.com/esc-clh;1",
++   classID:  Components.ID("{36c65861-52a8-4ce9-aa3b-235b88216ed4}"),
++  // const clh_category = "c-esc";
++
++
+    /* nsISupports */
+-   QueryInterface : function clh_QI(iid) {
+-       if (iid.equals(nsICommandLineHandler) ||
+-           iid.equals(nsIFactory) ||
+-           iid.equals(nsISupports))
+-           return this;
+ 
+-       throw Components.results.NS_ERROR_NO_INTERFACE;
+-   },
++   QueryInterface : XPCOMUtils.generateQI([nsICommandLineHandler]),
++
+ 
+    /* nsICommandLineHandler */
+ 
+@@ -91,76 +99,8 @@
+ 
+    helpInfo : "  -myapp  Open the My App.\n",
+ 
+-   /* nsIFactory */
+-
+-   createInstance : function clh_CI(outer, iid) {
+-       if (outer != null)
+-           throw Components.results.NS_ERROR_NO_AGGREGATION;
+-
+-       return this.QueryInterface(iid);
+-   },
+-
+-   lockFactory : function clh_lock(lock) {
+-       /* no-op */
+-   }
+- };
+-
+- const clh_contractID = "@redhat.com/esc-clh;1";
+- const clh_CID = Components.ID("{36c65861-52a8-4ce9-aa3b-235b88216ed4}");
+- const clh_category = "c-esc";
+-
+- const escCLHModule = {
+-   /* nsISupports */
+-
+-   QueryInterface : function mod_QI(iid) {
+-       if (iid.equals(nsIModule) ||
+-           iid.equals(nsISupports))
+-           return this;
+-
+-       throw Components.results.NS_ERROR_NO_INTERFACE;
+-   },
+-
+-   /* nsIModule */
+-   getClassObject : function mod_gch(compMgr, cid, iid) {
+-       if (cid.equals(clh_CID))
+-           return escCLH.QueryInterface(iid);
+-
+-       throw Components.results.NS_ERROR_NOT_REGISTERED;
+-   },
+-
+-   registerSelf : function mod_regself(compMgr, fileSpec, location, type) {
+-       compMgr.QueryInterface(nsIComponentRegistrar);
+-
+-       compMgr.registerFactoryLocation(clh_CID,
+-                                       "escCLH",
+-                                       clh_contractID,
+-                                       fileSpec,
+-                                       location,
+-                                       type);
+-
+-       var catMan = Components.classes["@mozilla.org/categorymanager;1"]
+-                              .getService(nsICategoryManager);
+-       catMan.addCategoryEntry("command-line-handler",
+-                               clh_category,
+-                               clh_contractID, true, true);
+-   },
+-
+-   unregisterSelf : function mod_unreg(compMgr, location, type) {
+-       compMgr.QueryInterface(nsIComponentRegistrar);
+-
+-       compMgr.unregisterFactoryLocation(clh_CID, location);
+-
+-       var catMan = Components.classes["@mozilla.org/categorymanager;1"]
+-                              .getService(nsICategoryManager);
+-       catMan.deleteCategoryEntry("command-line-handler", clh_category);
+-   },
+-
+-   canUnload : function (compMgr) {
+-       return true;
+-   }
+  };
+ 
+  /* Module initialisation */
+- function NSGetModule(comMgr, fileSpec) {
+-   return escCLHModule;
+- }
++
++var NSGetFactory = XPCOMUtils.generateNSGetFactory([escCLH]);
+diff -up ./esc/src/lib/notifytray/notifyareaicon.c.fix9 ./esc/src/lib/notifytray/notifyareaicon.c
+--- ./esc/src/lib/notifytray/notifyareaicon.c.fix9	2011-03-24 12:57:00.410712173 -0700
++++ ./esc/src/lib/notifytray/notifyareaicon.c	2011-03-24 12:57:21.501712174 -0700
+@@ -90,19 +90,7 @@ notify_area_icon_class_init (NotifyAreaI
+ static void
+ notify_area_icon_unrealize (GtkWidget *widget)
+ {
+-  NotifyAreaIcon *icon =  (NotifyAreaIcon *) widget;
+-
+-  GdkWindow *root_window;
+-
+   g_print("notify_area_icon_unrealize \n");
+-  if (icon->manager_wnd != None)
+-    {
+-      GdkWindow *gdkwin;
+-      gdkwin = gdk_window_lookup (icon->manager_wnd);
+-
+-    }
+-
+-  root_window = gdk_window_lookup (gdk_x11_get_default_root_xwindow ());
+ 
+   if (GTK_WIDGET_CLASS (plug_parent_class)->unrealize)
+     (* GTK_WIDGET_CLASS (plug_parent_class)->unrealize) (widget);
+@@ -159,14 +147,6 @@ notify_area_icon_update_manager_wnd(Noti
+  
+   xdisplay = gdk_display;
+   
+-  if (icon->manager_wnd != None)
+-    {
+-      GdkWindow *gdkwin;
+-
+-      gdkwin = gdk_window_lookup (icon->manager_wnd);
+-      
+-    }
+-  
+   XGrabServer (xdisplay);
+   
+   icon->manager_wnd = XGetSelectionOwner (xdisplay, icon->selection_atom);
+@@ -235,7 +215,7 @@ notify_area_icon_new(const gchar *name)
+ {
+   NotifyAreaIcon *icon;
+   char buff[256];
+-  GdkWindow *root;
++ /* GdkWindow *root; */
+ 
+   Screen *xscreen = DefaultScreenOfDisplay (gdk_display);
+ 
+@@ -275,8 +255,6 @@ notify_area_icon_new(const gchar *name)
+   notify_area_icon_update_manager_wnd(icon); 
+ 
+    g_print ("attempted to update_manager_wnd: %p",(void *)icon->manager_wnd);
+-
+-  root = gdk_window_lookup (gdk_x11_get_default_root_xwindow ());
+  
+   icon->tooltips = gtk_tooltips_new ();
+ 
+diff -up ./esc/src/lib/notifytray/notifytray.c.fix9 ./esc/src/lib/notifytray/notifytray.c
+--- ./esc/src/lib/notifytray/notifytray.c.fix9	2011-03-24 12:57:57.680712175 -0700
++++ ./esc/src/lib/notifytray/notifytray.c	2011-03-24 12:58:07.243712165 -0700
+@@ -239,7 +239,7 @@ void notify_icon_send_tooltip_msg(const 
+     }
+ 
+     g_print("icon %s", icon);
+-    NotifyNotification *not = notify_notification_new(msg_title, message,icon, GTK_WIDGET(notify));
++    NotifyNotification *not = notify_notification_new(msg_title, message,icon); /*, GTK_WIDGET(notify));*/
+ 
+     if(not)
+     {

@@ -1,0 +1,93 @@
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix11 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix11	2011-09-16 11:28:43.413286053 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2011-09-16 11:28:43.529286053 -0700
+@@ -108,7 +108,7 @@ endif
+ ifeq ($(OS_ARCH),Linux)
+ CPPFLAGS += -fno-rtti \
+                 -fno-exceptions \
+-                -fshort-wchar -fPIC
++                -fshort-wchar -fPIC -std=gnu++0x
+ GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib    $(GECKO_SDK_PATH)/lib/libxpcomglue.a -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl
+ endif
+ 
+@@ -129,6 +129,10 @@ ifdef ESC_VERSION
+ GECKO_DEFINES += -DESC_VERSION=$(ESC_VERSION)
+ endif
+ 
++ifdef GECKO_BIN_PATH
++GECKO_DEFINES += -DGECKO_BIN_PATH=$(GECKO_BIN_PATH)
++endif
++
+ NSS_INCLUDE =  /usr/include/nss3
+ NSPR_INCLUDE =  /usr/include/nspr4
+ 
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix11 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix11	2011-09-16 11:28:43.510286053 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2011-09-16 11:28:43.530286053 -0700
+@@ -538,7 +538,7 @@ PRBool rhCoolKey::InitInstance()
+ 
+     char xpcom_path[4096];
+     xpcom_path[0] = 0;
+-
++/*
+     static const GREVersionRange greVersion = 
+     {
+     "1.9", PR_TRUE,
+@@ -550,6 +550,13 @@ PRBool rhCoolKey::InitInstance()
+         return PR_FALSE;
+     }
+ 
++*/
++
++    char *grePath = (char *) GETSTRING(GECKO_BIN_PATH);
++
++    
++    snprintf(xpcom_path,4096,grePath);
++
+     char *lib_name =(char *) XPCOM_LIB_NAME ;
+ 
+   
+diff -up ./esc/src/app/xpcom/tray/Makefile.sdk.fix11 ./esc/src/app/xpcom/tray/Makefile.sdk
+--- ./esc/src/app/xpcom/tray/Makefile.sdk.fix11	2011-09-16 11:31:59.645286087 -0700
++++ ./esc/src/app/xpcom/tray/Makefile.sdk	2011-09-16 11:32:10.859286088 -0700
+@@ -23,7 +23,7 @@ include $(CORE_DEPTH)/coreconf/config.mk
+ include $(CORE_DEPTH)/coreconf/rules.mk
+ 
+ ifeq ($(OS_ARCH),Linux)
+-CXXFLAGS        += $(MOZ_GTK_CFLAGS) $(MOZ_GTK2_CFLAGS) $(NOTIFY_CXX_FLAGS) -fPIC
++CXXFLAGS        += $(MOZ_GTK_CFLAGS) $(MOZ_GTK2_CFLAGS) $(NOTIFY_CXX_FLAGS) -fPIC -std=gnu++0x
+ endif
+ 
+ 
+diff -up ./esc/src/app/xul/esc/application.ini.fix11 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix11	2011-09-16 11:28:43.511286053 -0700
++++ ./esc/src/app/xul/esc/application.ini	2011-09-16 11:28:43.532286053 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-15
++Version=1.1.0-16
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001015
++BuildID=0000001016
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+@@ -41,12 +41,12 @@ ID={6380471b-1924-4b48-b652-49f42951af86
+ ; This field is required.  It specifies the minimum Gecko version that this
+ ; application requires.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MinVersion=1.99
++MinVersion=6.0.0
+ ;
+ ; This field is optional.  It specifies the maximum Gecko version that this
+ ; application requires.  It should be specified if your application uses
+ ; unfrozen interfaces.  Specifying 1.8 matches all releases with a version
+ ; prefixed by 1.8 (e.g., 1.8a4, 1.8b, 1.8.2).
+-MaxVersion=2.99
++MaxVersion=20.0.0
+ 
+ [Shell]

@@ -1,0 +1,458 @@
+diff -up ./esc/coreconf/Linux3.3.mk.fix14 ./esc/coreconf/Linux3.3.mk
+--- ./esc/coreconf/Linux3.3.mk.fix14	2012-05-10 15:09:37.298143842 -0700
++++ ./esc/coreconf/Linux3.3.mk	2012-05-10 15:09:37.298143842 -0700
+@@ -0,0 +1,35 @@
++# BEGIN COPYRIGHT BLOCK
++# This Program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU General Public License as published by the Free Software
++# Foundation; version 2 of the License.
++#
++# This Program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License along with
++# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
++# Place, Suite 330, Boston, MA 02111-1307 USA.
++#
++# Copyright (C) 2005 Red Hat, Inc.
++# All rights reserved.
++# END COPYRIGHT BLOCK
++
++#
++# Config stuff for Linux 3.3 (ELF)
++#
++
++include $(CORE_DEPTH)/coreconf/Linux.mk
++
++OS_REL_CFLAGS   += -DLINUX2_1
++MKSHLIB         = $(CC) -shared -Wl,-soname -Wl,$(@:$(OBJDIR)/%.so=%.so)
++ifdef BUILD_OPT
++            OPTIMIZER       = -O2
++endif
++
++ifdef MAPFILE
++	MKSHLIB += -Wl,--version-script,$(MAPFILE)
++endif
++PROCESS_MAP_FILE = grep -v ';-' $(LIBRARY_NAME).def | \
++        sed -e 's,;+,,' -e 's; DATA ;;' -e 's,;;,,' -e 's,;.*,;,' > $@
++
+diff -up ./esc/coreconf/Linux3.4.mk.fix14 ./esc/coreconf/Linux3.4.mk
+--- ./esc/coreconf/Linux3.4.mk.fix14	2012-05-10 15:09:37.298143842 -0700
++++ ./esc/coreconf/Linux3.4.mk	2012-05-10 15:09:37.298143842 -0700
+@@ -0,0 +1,35 @@
++# BEGIN COPYRIGHT BLOCK
++# This Program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU General Public License as published by the Free Software
++# Foundation; version 2 of the License.
++#
++# This Program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License along with
++# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
++# Place, Suite 330, Boston, MA 02111-1307 USA.
++#
++# Copyright (C) 2005 Red Hat, Inc.
++# All rights reserved.
++# END COPYRIGHT BLOCK
++
++#
++# Config stuff for Linux 3.4 (ELF)
++#
++
++include $(CORE_DEPTH)/coreconf/Linux.mk
++
++OS_REL_CFLAGS   += -DLINUX2_1
++MKSHLIB         = $(CC) -shared -Wl,-soname -Wl,$(@:$(OBJDIR)/%.so=%.so)
++ifdef BUILD_OPT
++            OPTIMIZER       = -O2
++endif
++
++ifdef MAPFILE
++	MKSHLIB += -Wl,--version-script,$(MAPFILE)
++endif
++PROCESS_MAP_FILE = grep -v ';-' $(LIBRARY_NAME).def | \
++        sed -e 's,;+,,' -e 's; DATA ;;' -e 's,;;,,' -e 's,;.*,;,' > $@
++
+diff -up ./esc/coreconf/Linux3.5.mk.fix14 ./esc/coreconf/Linux3.5.mk
+--- ./esc/coreconf/Linux3.5.mk.fix14	2012-05-10 15:09:37.299143830 -0700
++++ ./esc/coreconf/Linux3.5.mk	2012-05-10 15:09:37.298143842 -0700
+@@ -0,0 +1,35 @@
++# BEGIN COPYRIGHT BLOCK
++# This Program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU General Public License as published by the Free Software
++# Foundation; version 2 of the License.
++#
++# This Program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License along with
++# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
++# Place, Suite 330, Boston, MA 02111-1307 USA.
++#
++# Copyright (C) 2005 Red Hat, Inc.
++# All rights reserved.
++# END COPYRIGHT BLOCK
++
++#
++# Config stuff for Linux 3.5 (ELF)
++#
++
++include $(CORE_DEPTH)/coreconf/Linux.mk
++
++OS_REL_CFLAGS   += -DLINUX2_1
++MKSHLIB         = $(CC) -shared -Wl,-soname -Wl,$(@:$(OBJDIR)/%.so=%.so)
++ifdef BUILD_OPT
++            OPTIMIZER       = -O2
++endif
++
++ifdef MAPFILE
++	MKSHLIB += -Wl,--version-script,$(MAPFILE)
++endif
++PROCESS_MAP_FILE = grep -v ';-' $(LIBRARY_NAME).def | \
++        sed -e 's,;+,,' -e 's; DATA ;;' -e 's,;;,,' -e 's,;.*,;,' > $@
++
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix14 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix14	2012-05-10 15:09:37.293143904 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2012-05-10 15:25:17.138394220 -0700
+@@ -106,15 +106,14 @@ endif
+ endif
+ 
+ ifeq ($(OS_ARCH),Darwin)
+-GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib    -W1,  $(GECKO_SDK_PATH)/lib/libxpcomglue.a -L$(XUL_FRAMEWORK_BIN_PATH) -lnss3 -lssl3 -lsoftokn3 -lplds4 -lplc4 -lnssutil3
++GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib    -W1,  $(GECKO_SDK_PATH)/lib/libxpcomglue.a -L$(XUL_FRAMEWORK_BIN_PATH) -lnss3 -lssl3 -lsoftokn3 -lplds4 -lplc4 -lnssutil3 
+ endif
+ 
+-
+ ifeq ($(OS_ARCH),Linux)
+-CPPFLAGS += -fno-rtti \
+-                -fno-exceptions \
+-                -fshort-wchar -fPIC -std=gnu++0x
+-GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib    $(GECKO_SDK_PATH)/lib/libxpcomglue.a -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl
++CPPFLAGS += -g -fno-rtti \
++                -DXPCOM_GLUE_USE_NSPR -fno-exceptions \
++                -fshort-wchar -fPIC -std=gnu++0x  
++GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib  -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl -L$(GECKO_SDK_PATH)/lib -lxpcomglue_s -lxpcom
+ endif
+ 
+ ifeq ($(OS_ARCH),WINNT)
+@@ -128,15 +127,15 @@ endif
+ # #include "mozilla-config.h" to each of your .cpp files. 
+ #GECKO_CONFIG_INCLUDE = -include mozilla-config.h 
+ 
+-GECKO_DEFINES  = -DXPCOM_GLUE  -DMOZILLA_CLIENT
++GECKO_DEFINES  = -DXPCOM_GLUE   -DMOZILLA_CLIENT
+ 
+ ifdef ESC_VERSION
+ GECKO_DEFINES += -DESC_VERSION=$(ESC_VERSION)
+ endif
+ 
+-ifdef GECKO_BIN_PATH
+-GECKO_DEFINES += -DGECKO_BIN_PATH=$(GECKO_BIN_PATH)
+-endif
++#ifdef GECKO_BIN_PATH
++#GECKO_DEFINES += -DGECKO_BIN_PATH=$(GECKO_BIN_PATH)
++#endif
+ 
+ NSS_INCLUDE =  /usr/include/nss3
+ NSPR_INCLUDE =  /usr/include/nspr4
+@@ -162,7 +161,7 @@ COOL_LDFLAGS += -lsystemStubs  -framewor
+ endif
+  
+ GECKO_LDFLAGS= -lnspr4 \
+-	-lplds4  -lplc4 -ldl  -lpthread  -Wl -z   \
++	-lplds4  -lplc4 -ldl  -lpthread   -z   \
+         $(GECKO_LD_LIBS)
+ 
+ ifeq ($(OS_ARCH),WINNT)
+@@ -215,7 +214,7 @@ ifeq ($(OS_ARCH),Linux)
+ 
+ 	$(CXX)   $(CPPFLAGS) -shared -o $(TARGET) $(OBJECT)  $(GECKO_DEFINES) $(GECKO_INCLUDES)  $(GECKO_LDFLAGS) $(COOL_LDFLAGS)
+ 	chmod +x $(TARGET)
+-	strip $(TARGET)
++	#strip $(TARGET)
+ endif
+ 
+ ifeq ($(OS_ARCH),WINNT)
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix14 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix14	2012-05-10 15:09:37.294143891 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2012-05-10 15:09:37.300143818 -0700
+@@ -16,7 +16,6 @@
+  * END COPYRIGHT BLOCK **/
+ 
+ #define FORCE_PR_LOG 1
+-
+ #include <stdio.h>
+ #include "rhCoolKey.h"
+ #include "CoolKey.h"
+@@ -34,7 +33,7 @@
+ #include "nsIPrefBranch.h"
+ #include "nsIPrefService.h"
+ #include "nsCOMPtr.h"
+-#include "nsIProxyObjectManager.h"
++#include "nsThreadUtils.h"
+ #include "nsIObserver.h"
+ #include "nsIObserverService.h"
+ #include "nsXPCOMGlue.h"
+@@ -91,6 +90,7 @@ std::list<CoolKeyNode*>rhCoolKey::gASCAv
+ std::list< nsCOMPtr <rhIKeyNotify>  > rhCoolKey::gNotifyListeners;
+ 
+ PRLock* rhCoolKey::certCBLock=NULL;
++PRLock* rhCoolKey::eventLock= NULL;
+ 
+ PRBool rhCoolKey::gAutoEnrollBlankTokens = PR_FALSE; 
+ 
+@@ -162,6 +162,70 @@ ASCCalcBase64DecodedLength(const char *a
+ 
+   return ((numValidChars / 4) * 3) - numEqualSigns;
+ }
++class CoolKeyResultTask  : public  nsRunnable
++{
++public:
++  ~CoolKeyResultTask() {
++
++      char tBuff[56];
++      PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s ~CoolKeyResultTask thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
++
++      if (mKeyID) {
++          free(mKeyID);
++      }
++
++      if (mStrData) {
++          free(mStrData);
++      }
++
++  }
++
++  CoolKeyResultTask(unsigned long keyType, const char *keyID, unsigned long keyState,
++                    unsigned long data, const char *strData, rhICoolKey *listener)
++    : mKeyType(keyType), mKeyState(keyState), 
++      mData(data), mListener(listener)
++  {
++
++     mStrData = NULL;
++     mKeyID   = NULL;
++
++     MOZ_ASSERT(!NS_IsMainThread());
++     
++     if (keyID) {
++         mKeyID = strdup(keyID);
++     }
++
++     if (strData) {
++         mStrData = strdup(strData);
++     }
++
++     char tBuff[56];
++
++     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s CoolKeyResultTask::CoolKeyResultTask thread:   %p keyID %s \n",GetTStamp(tBuff,56),PR_GetCurrentThread(),mKeyID));
++
++  }
++
++
++  NS_IMETHOD Run() {
++    MOZ_ASSERT(NS_IsMainThread());
++
++     char tBuff[56];
++     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s CoolKeyResultTask::Run thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
++   
++     if (mListener != NULL) {
++         mListener->RhNotifyKeyStateChange(mKeyType, mKeyID, mKeyState, 
++                        mData, mStrData);
++     } 
++   }
++
++private: 
++   unsigned long mKeyType;
++   char *mKeyID;
++   unsigned long mKeyState;
++   unsigned long mData;
++   char *mStrData; 
++   rhICoolKey *mListener;
++};
+ 
+ unsigned int
+ ASCCalcBase64EncodedLength(unsigned int aDataLength)
+@@ -200,6 +264,14 @@ rhCoolKey::rhCoolKey()
+         exit(1);
+     }
+ 
++    eventLock = PR_NewLock();
++
++    if(!eventLock) {
++       PR_LOG( coolKeyLog, PR_LOG_ERROR, ("%s Failed to create event lock exiting! \n", GetTStamp(tBuff,56)));
++       exit(1);
++    }
++
++
+     PRBool res = InitInstance();
+ 
+     if(res == PR_FALSE)
+@@ -221,6 +293,10 @@ rhCoolKey::~rhCoolKey()
+     if(certCBLock) {
+         PR_DestroyLock(certCBLock);
+     }
++
++    if(eventLock) {
++        PR_DestroyLock(eventLock);
++    }
+ }
+ 
+ void rhCoolKey::ShutDownInstance()
+@@ -255,8 +331,17 @@ HRESULT rhCoolKey::Dispatch( rhICoolKey
+     unsigned long keyType, const char *keyID, unsigned long keyState,
+     unsigned long data, const char *strData)
+ {
+-    return listener->RhNotifyKeyStateChange(keyType,keyID, keyState, 
+-			data, strData);
++
++    char tBuff[56];
++
++    PR_Lock(eventLock);
++    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::Dispatch: thead:  %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
++    nsCOMPtr<nsIRunnable>  result = new CoolKeyResultTask(keyType, keyID,keyState, data, strData, listener);
++
++    NS_DispatchToMainThread(result);
++
++    PR_Unlock(eventLock);
++    return  1;  
+ }
+ 
+ HRESULT rhCoolKey::Reference( rhICoolKey *listener )
+@@ -536,34 +621,6 @@ PRBool rhCoolKey::InitInstance()
+ 
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::InitInstance %p \n",GetTStamp(tBuff,56),this));
+ 
+-    char xpcom_path[4096];
+-    xpcom_path[0] = 0;
+-/*
+-    static const GREVersionRange greVersion = 
+-    {
+-    "1.9", PR_TRUE,
+-    "9.9", PR_TRUE
+-    };
+-
+-    nsresult rv = GRE_GetGREPathWithProperties(&greVersion, 1, nsnull, 0, xpcom_path, 4096);
+-    if (NS_FAILED(rv)) {
+-        return PR_FALSE;
+-    }
+-
+-*/
+-
+-    char *grePath = (char *) GETSTRING(GECKO_BIN_PATH);
+-
+-    
+-    snprintf(xpcom_path,4096,"%s%s",grePath,"libxpcom.so");
+-
+-    char *lib_name =(char *) XPCOM_LIB_NAME ;
+-
+-  
+-    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::xpcom_path %s \n",GetTStamp(tBuff,56),xpcom_path)); 
+-
+-    XPCOMGlueStartup("/usr/lib/xulrunner-2/libxpcom.so");
+-
+     nssComponent
+     = do_GetService(PSM_COMPONENT_CONTRACTID); 
+ 
+@@ -640,23 +697,8 @@ PRBool rhCoolKey::InitInstance()
+ 
+ rhICoolKey* rhCoolKey::CreateProxyObject()
+ {
+-    char tBuff[56];
+-    rhICoolKey *proxyObject = NULL;
+-
+-    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::CreateProxyObject: \n",GetTStamp(tBuff,56)));
+-
+-    nsCOMPtr<nsIProxyObjectManager> manager =
+-            do_GetService(NS_XPCOMPROXY_CONTRACTID);
+-
+-    PR_ASSERT(manager);
+-
+-
+-    manager->GetProxyForObject(NULL, NS_GET_IID(rhICoolKey), this, NS_PROXY_SYNC | NS_PROXY_ALWAYS, (void**)&proxyObject);
+-
+-    PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::CreateProxyObject: original: %p proxy %p  \n",GetTStamp(tBuff,56),this,proxyObject));
+-
+-    return proxyObject;
+-   
++    // Now we are using nsRunnable, no more proxy object manager.
++    return this;
+ }
+ 
+ CoolKeyNode* rhCoolKey::GetCoolKeyInfo(unsigned long aKeyType, const char * aKeyID)
+diff -up ./esc/src/app/xpcom/rhCoolKey.h.fix14 ./esc/src/app/xpcom/rhCoolKey.h
+--- ./esc/src/app/xpcom/rhCoolKey.h.fix14	2012-05-10 15:09:37.274144142 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.h	2012-05-10 15:09:37.300143818 -0700
+@@ -120,6 +120,7 @@ protected:
+     static std::list< nsCOMPtr <rhIKeyNotify> > gNotifyListeners;
+ 
+     static PRLock* certCBLock;
++    static PRLock* eventLock;
+ 
+     rhICoolKey* mProxy;
+ 
+diff -up ./esc/src/app/xul/esc/application.ini.fix14 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix14	2012-05-10 15:09:37.295143878 -0700
++++ ./esc/src/app/xul/esc/application.ini	2012-05-10 15:09:37.300143818 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-15
++Version=1.1.0-16
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001016
++BuildID=0000001017
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix14 ./esc/src/app/xul/esc/chrome/content/esc/password.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix14	2012-05-10 15:09:37.251144429 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/password.xul	2012-05-10 15:09:37.301143805 -0700
+@@ -27,7 +27,6 @@
+ 
+ <stringbundle id="esc_strings" src="chrome://esc/locale/esc.properties"/>
+ <script src="password.js"/>
+-<script src="TRAY.js"/>
+ 
+ <spacer class = "horSpacerVeryShort"/>
+  <grid>
+diff -up ./esc/src/lib/coolkey/CoolKeyHandler.cpp.fix14 ./esc/src/lib/coolkey/CoolKeyHandler.cpp
+--- ./esc/src/lib/coolkey/CoolKeyHandler.cpp.fix14	2009-02-03 17:43:47.000000000 -0800
++++ ./esc/src/lib/coolkey/CoolKeyHandler.cpp	2012-05-10 15:09:37.302143792 -0700
+@@ -451,7 +451,6 @@ HRESULT CoolKeyHandler::Init(const CoolK
+     PR_LOG( coolKeyLogHN, PR_LOG_DEBUG, ("%s CoolKeyHandler::Init:\n",GetTStamp(tBuff,56)));
+ 
+     bool connected = false;
+-    PRThread*  cThread = NULL;
+     const char *readerName =  NULL;
+ 
+     if (!aKey || aKey->mKeyType != eCKType_CoolKey ||  !aKey->mKeyID) {
+@@ -461,9 +460,6 @@ HRESULT CoolKeyHandler::Init(const CoolK
+   
+     readerName = GetReaderNameForKeyID(aKey);
+ 
+-    cThread = PR_GetCurrentThread();
+-
+-
+     mKey = *aKey;
+ 
+   
+diff -up ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp.fix14 ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp
+--- ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp.fix14	2012-05-10 15:09:37.250144442 -0700
++++ ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp	2012-05-10 15:09:37.302143792 -0700
+@@ -29,6 +29,9 @@
+ 
+ #include <assert.h>
+ #include <time.h>
++#ifdef LINUX
++#include <unistd.h>
++#endif
+ 
+ static PRLogModuleInfo *coolKeyLogSC = PR_NewLogModule("coolKeySmart");
+ 

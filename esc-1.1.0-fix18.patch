@@ -1,0 +1,104 @@
+diff -up ./esc/coreconf/Linux3.10.mk.fix18 ./esc/coreconf/Linux3.10.mk
+--- ./esc/coreconf/Linux3.10.mk.fix18	2013-07-30 11:32:33.214414126 -0700
++++ ./esc/coreconf/Linux3.10.mk	2013-07-30 11:32:33.214414126 -0700
+@@ -0,0 +1,35 @@
++# BEGIN COPYRIGHT BLOCK
++# This Program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU General Public License as published by the Free Software
++# Foundation; version 2 of the License.
++#
++# This Program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License along with
++# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
++# Place, Suite 330, Boston, MA 02111-1307 USA.
++#
++# Copyright (C) 2005 Red Hat, Inc.
++# All rights reserved.
++# END COPYRIGHT BLOCK
++
++#
++# Config stuff for Linux 3.10 (ELF)
++#
++
++include $(CORE_DEPTH)/coreconf/Linux.mk
++
++OS_REL_CFLAGS   += -DLINUX2_1
++MKSHLIB         = $(CC) -shared -Wl,-soname -Wl,$(@:$(OBJDIR)/%.so=%.so)
++ifdef BUILD_OPT
++            OPTIMIZER       = -O2
++endif
++
++ifdef MAPFILE
++	MKSHLIB += -Wl,--version-script,$(MAPFILE)
++endif
++PROCESS_MAP_FILE = grep -v ';-' $(LIBRARY_NAME).def | \
++        sed -e 's,;+,,' -e 's; DATA ;;' -e 's,;;,,' -e 's,;.*,;,' > $@
++
+diff -up ./esc/rpm/esc.1.fix18 ./esc/rpm/esc.1
+--- ./esc/rpm/esc.1.fix18	2013-07-30 11:32:33.215414126 -0700
++++ ./esc/rpm/esc.1	2013-07-30 11:32:33.215414126 -0700
+@@ -0,0 +1,47 @@
++.\" First parameter, NAME, should be all caps
++.\" Second parameter, SECTION, should be 1-8, maybe w/ subsection
++.\" other parameters are allowed: see man(7), man(1)
++.TH esc 1 "July 30, 2013" "version 1.0.1" "Smart Card Manager" Jack Magne
++.\" Please adjust this date whenever revising the man page.
++.\"
++.\" Some roff macros, for reference:
++.\" .nh        disable hyphenation
++.\" .hy        enable hyphenation
++.\" .ad l      left justify
++.\" .ad b      justify to both left and right margins
++.\" .nf        disable filling
++.\" .fi        enable filling
++.\" .br        insert line break
++.\" .sp <n>    insert n+1 empty lines
++.\" for man page specific macros, see man(7)
++.SH NAME
++esc \- Minimal Command-Line Interface for Smart Card Manager.
++
++.SH SYNOPSIS
++esc [options] 
++
++.SH DESCRIPTION
++.PP
++\fBesc\fR provides a minimal command-line interface to Smart Card Manager which allows users to manage Smart Cards on the system. The program is most often run automatically when the user logs into the system or when an actual smart card is entered into the computer. This minimal command line interface may be of use in unusual circumstances.
++  
++.SH OPTIONS
++.TP
++NO Options.
++Will start the esc daemon if not running. Will start the esc UI if daemon is running.
++.TP
++.TP
++--version
++Displays the version number of esc.
++.TP
++
++
++
++
++.SH FILES
++.I /usr/bin/esc
++
++.SH AUTHORS
++Jack Magne <jmagne@redhat.com> \fBesc\fP was written with the Dogtag project.
++
++.SH COPYRIGHT
++Copyright (c) 2013 Red Hat, Inc. 
+diff -up ./esc/rpm/esc.desktop.fix18 ./esc/rpm/esc.desktop
+--- ./esc/rpm/esc.desktop.fix18	2013-07-30 14:20:31.906223946 -0700
++++ ./esc/rpm/esc.desktop	2013-07-30 14:35:42.684255272 -0700
+@@ -1,8 +1,7 @@
+ [Desktop Entry]
+ Type=Application
+-Encoding=UTF-8
+ Name=Smart Card Manager
+ Comment=Enterprise Security Client Smart Card Manager
+-Categories=System;Application;SystemSetup;X-Red-Hat-Base;
++Categories=System;Application;X-Red-Hat-Base;
+ Exec=esc
+-Icon=esc.png
++Icon=esc-png

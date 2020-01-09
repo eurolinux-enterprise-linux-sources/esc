@@ -1,0 +1,423 @@
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix16 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix16	2012-11-28 14:47:47.510976503 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2012-11-28 14:49:58.889984069 -0800
+@@ -133,7 +133,6 @@ jsNotify.prototype = {
+   var gNotify=null;
+ 
+   try {
+-    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey = Components.classes["@redhat.com/rhCoolKey;1"].getService();
+     netkey = netkey.QueryInterface(Components.interfaces.rhICoolKey);
+     gNotify = new jsNotify;
+@@ -152,7 +151,6 @@ function cleanup()
+ {
+     TrayRemoveWindow(null);
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       netkey.rhCoolKeyUnSetNotifyCallback(gNotify);
+     } catch(e) {
+      MyAlert(getBundleString("errorUniversalXPConnect")  + e);
+@@ -425,7 +423,6 @@ function commitConfigValues()
+              var res = 0;
+ 
+              try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+                 res = netkey.SetCoolKeyConfigValue("esc.tps.url",tps_uri_value);
+ 
+             } catch(e) {
+@@ -434,7 +431,6 @@ function commitConfigValues()
+             }
+ 
+             try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+                 res = netkey.SetCoolKeyConfigValue("esc.enroll.ui.url",esc_enroll_value);
+                 grantPrivilegesURL(esc_enroll_value);
+@@ -466,7 +462,6 @@ function InitializeConfigUI()
+    if(netkey)
+    {
+              try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+                 tps_uri = netkey.GetCoolKeyConfigValue("esc.tps.url");
+ 
+@@ -487,7 +482,6 @@ function InitializeConfigUI()
+         var esc_enroll_uri = null;
+ 
+         try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     
+                 esc_enroll_uri = netkey.GetCoolKeyConfigValue("esc.enroll.ui.url");
+     
+@@ -550,7 +544,6 @@ function CoolKeySetDataValue(aKeyType,aK
+         if(netkey)
+         {
+              try {
+-                    netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+                 netkey.SetCoolKeyDataValue(aKeyType,aKeyID,name,value);
+ 
+@@ -567,7 +560,6 @@ function CoolKeySetTokenPin(pin)
+         if(netkey)
+         {
+              try { 
+-                netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+                 netkey.SetCoolKeyDataValue(gCurKeyType,gCurKeyID,"TokenPin",pin);
+ 
+             } catch(e) {
+@@ -581,7 +573,6 @@ function CoolKeySetUidPassword(uid,pwd)
+       if(netkey)
+       {
+           try {
+-              netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+               netkey.SetCoolKeyDataValue(gCurKeyType,gCurKeyID,"UserId",uid);
+               netkey.SetCoolKeyDataValue(gCurKeyType,gCurKeyID,"Password",pwd);
+ 
+@@ -646,7 +637,6 @@ function ReportException(msg, e)
+ function GetCoolKeyStatus(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyStatus(keyType, keyID);
+   } catch (e) {
+     ReportException(getBundleString("errorCoolKeyGetStatus"), e);
+@@ -665,7 +655,6 @@ function ConfigValueWithKeyID(keyID,conf
+ function GetCoolKeyPolicy(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyPolicy(keyType, keyID);
+   } catch (e) {
+     //ReportException(getBundleString("errorCoolKeyGetPolicy"), e);
+@@ -676,7 +665,6 @@ function GetCoolKeyPolicy(keyType, keyID
+ function GetCoolKeyRequiresAuth(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyRequiresAuthentication(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCoolKeyRequiresAuth"), e);
+@@ -687,7 +675,6 @@ function GetCoolKeyRequiresAuth(keyType,
+ function AuthenticateCoolKey(keyType, keyID,aPIN)
+ {   
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.AuthenticateCoolKey(keyType, keyID,"netscape");
+   } catch(e) {
+     ReportException(getBundleString("errorAuthCoolKey"), e);
+@@ -698,7 +685,6 @@ function AuthenticateCoolKey(keyType, ke
+ function GetCoolKeyIsAuthed(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyIsAuthenticated(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCoolKeyIsAuth"), e);
+@@ -717,7 +703,6 @@ function GetCoolKeyIssuer(keyType,keyID)
+     if(!issuer && (GetStatusForKeyID(keyType, keyID) == getBundleString("statusEnrolled")))
+     {
+         try {
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+             issuer = netkey.GetCoolKeyIssuer(keyType,keyID);
+ 
+             var issuer_url = ConfigValueWithKeyID(keyID,KEY_ISSUER_URL);
+@@ -757,7 +742,6 @@ function GetCoolKeyIssuedTo(keyType,keyI
+     var issuedTo = null;
+ 
+     try {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+         issuedTo = netkey.GetCoolKeyIssuedTo(keyType,keyID);
+ 
+     } catch (e)
+@@ -895,7 +879,6 @@ function GetCoolKeyCertNicknames(aKeyTyp
+ {
+   try {
+     var nameArr;
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var inArray = netkey.GetCoolKeyCertNicknames(aKeyType,aKeyId, {} );
+       nameArr = new Array(inArray.length);
+       var i;
+@@ -915,7 +898,6 @@ function GetCoolKeyVersion()
+     var result = null;
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       result = netkey.GetCoolKeyVersion();
+     return result;
+   } catch(e) {
+@@ -928,7 +910,6 @@ function GetCoolKeyCertInfo(aKeyType,aKe
+ {
+   try {
+     var info = null;
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       info = netkey.GetCoolKeyCertInfo(aKeyType,aKeyId, aCertNickname );
+       return info;
+   } catch(e) {
+@@ -942,7 +923,6 @@ function GetAvailableCoolKeys()
+   try {
+     var keyArr;
+ 
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var inArray = netkey.GetAvailableCoolKeys( {} );
+       keyArr = new Array(inArray.length);
+       var i;
+@@ -963,7 +943,6 @@ function CoolKeyLogMsg(aLogLevel,aMessag
+         return;
+ 
+     try { 
+-         netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+          netkey.CoolKeyLogMsg(aLogLevel,aMessage);
+          } catch(e) {
+          }
+@@ -972,7 +951,6 @@ function CoolKeyLogMsg(aLogLevel,aMessag
+ function ChallengeCoolKey(keyType, keyID, data)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.ChallengeCoolKey(keyType, keyID, data);
+   } catch(e) {
+     return [];
+@@ -982,7 +960,6 @@ function ChallengeCoolKey(keyType, keyID
+ function EnrollCoolKey(keyType, keyID, enrollmentType, screenname, pin,screennamepwd,tokencode)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.EnrollCoolKey(keyType, keyID, enrollmentType, screenname, pin,screennamepwd,tokencode);
+   } catch(e) {
+     ReportException(getBundleString("errorEnollCoolKey"), e);
+@@ -995,7 +972,6 @@ function EnrollCoolKey(keyType, keyID, e
+ function GetCoolKeyIsEnrolled(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     return netkey.GetCoolKeyIsEnrolled(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCoolKeyIsEnrolled"), e);
+@@ -1006,7 +982,6 @@ function GetCoolKeyIsEnrolled(keyType, k
+ function ResetCoolKeyPIN(keyType, keyID, screenname, pin,screennamepwd)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.ResetCoolKeyPIN(keyType, keyID, screenname, pin,screennamepwd);
+   } catch(e) {
+     ReportException(getBundleString("errorResetCoolKeyPIN"), e);
+@@ -1017,7 +992,6 @@ function ResetCoolKeyPIN(keyType, keyID,
+ function FormatCoolKey(keyType, keyID, type, screenname, pin,screennamepwd,tokencode)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.FormatCoolKey(keyType, keyID, type, screenname, pin,screennamepwd,tokencode);
+   } catch(e) {
+     ReportException(getBundleString("errorFormatCoolKey"), e);
+@@ -1029,7 +1003,6 @@ function FormatCoolKey(keyType, keyID, t
+ function CancelCoolKeyOperation(keyType, keyID)
+ {
+   try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+     netkey.CancelCoolKeyOperation(keyType, keyID);
+   } catch(e) {
+     ReportException(getBundleString("errorCancelCoolKey"), e);
+@@ -3653,7 +3626,6 @@ function getESCEnrollmentUI()
+    if(netkey)
+    {
+         try {
+-                netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+             esc_enroll_uri = netkey.GetCoolKeyConfigValue("esc.enroll.ui.url");
+ 
+             } catch(e) {
+@@ -3692,7 +3664,6 @@ function grantPrivilegesURL(aURL)
+     if(prePath)
+     {
+         try {
+-                netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             res = netkey.SetCoolKeyConfigValue("capability.principal.codebase.p0.id",prePath);
+ 
+@@ -3716,7 +3687,6 @@ function DoCoolKeySetConfigValue(configV
+    if(netkey)
+    {
+       try {
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             result = netkey.SetCoolKeyConfigValue(configValue,newValue);
+ 
+@@ -3739,7 +3709,6 @@ function DoCoolKeyGetConfigValue(configV
+    if(netkey)
+    {
+       try {
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             result = netkey.GetCoolKeyConfigValue(configValue);
+ 
+@@ -3791,7 +3760,6 @@ function DoGetCoolKeyIsReallyCoolKey(key
+         return 0;
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var isCool =  netkey.GetCoolKeyIsReallyCoolKey(keyType, keyID);
+ 
+       return isCool;
+@@ -3824,7 +3792,6 @@ function DoCoolKeyGetIssuerUrl(keyType,k
+     }
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+       var tries = 0;
+       while(tries < 3 )  
+@@ -3908,7 +3875,6 @@ function DoCoolKeyGetATR(keyType,keyID)
+ {
+     var atr = null;
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       atr =  netkey.GetCoolKeyATR(keyType, keyID);
+     } catch (e) {
+       return atr;
+@@ -3925,7 +3891,6 @@ function DoCoolKeyGetTokenName(keyType,k
+ 
+     var name = null;
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       name =  netkey.GetCoolKeyTokenName(keyType, keyID);
+     } catch (e) {
+       return name;
+@@ -3940,7 +3905,6 @@ function DoGetCoolKeyGetAppletVer(keyTyp
+     var ver = -1;
+ 
+     try {
+-      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+       var ver  =  netkey.GetCoolKeyGetAppletVer(keyType, keyID,isMajor);
+     } catch (e) {
+       ver = -1;
+@@ -4633,7 +4597,6 @@ function DoMyAlert(message,title)
+ {
+    if(!message || !title)
+        return;     try {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+        var prompts = Components.classes["@mozilla.org/embedcomp/prompt-service;1"].getService(Components.interfaces.nsIPromptService); 
+ 
+        prompts.alert(window,title,message);
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix16 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix16	2012-11-28 14:47:52.965976817 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2012-11-28 14:48:43.665979745 -0800
+@@ -48,7 +48,7 @@ jsWindNotify.prototype = {
+      //alert("iid: " + iid);
+      if(!iid.equals(Components.interfaces.rhITrayWindNotify) &&
+          !iid.equals(Components.interfaces.nsISupports) &&
+-         !iid.equals(Components.interfaces.nsIClassInfo)
++         !iid.equals(Components.interfaces.nsIClassInfo))
+       {
+           MyAlert(getBundleString("errorJsNotifyInterface"));
+           throw Components.results.NS_ERROR_NO_INTERFACE;
+@@ -63,7 +63,6 @@ jsWindNotify.prototype = {
+ 
+  // GECKO ONLY initialization
+ try {
+-   netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+    gTray =  Components.classes["@redhat.com/rhTray;1"].getService();
+ 
+ 
+@@ -129,7 +128,6 @@ function GetTrayIsInitialized()
+ 
+    try
+    {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         rv = gTray.isInitializedAlready();
+ 
+@@ -155,7 +153,6 @@ function ShowAllWindows()
+ 
+     try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         gTray.showall();
+ 
+@@ -175,7 +172,6 @@ function HideAllWindows()
+ 
+     try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         gTray.hideall();
+ 
+@@ -196,7 +192,6 @@ function ShowWindow()
+ 
+     try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+         gTray.show(gBaseWindow);
+ 
+@@ -216,7 +211,6 @@ function HideWindow()
+         
+     try {
+          
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+         
+         gTray.hide(gBaseWindow);
+         
+@@ -235,7 +229,6 @@ function TrayRemoveWindowNotify()
+     {
+          try {
+ 
+-            netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             gTray.unsetwindnotifycallback(gWindNotify);
+             
+@@ -254,7 +247,6 @@ function TrayRemoveWindow(doPreserveNoti
+     {
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             gTray.remove(gBaseWindow);
+ 
+@@ -277,7 +269,6 @@ function TrayAddWindow()
+ 
+          try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+ 
+             gTray.add(gBaseWindow);
+ 
+@@ -304,7 +295,6 @@ function TraySendNotificationMessage(aTi
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+ 
+ 
+         gTray.sendnotification(aTitle,aMessage,aSeverity,aTimeout,aIcon);
+@@ -329,7 +319,6 @@ function TrayHideNotificationIcon()
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+ 
+         gTray.hideicon();
+ 
+@@ -361,7 +350,6 @@ function TrayShowNotificationIcon()
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
+         gTray.settooltipmsg(getBundleString("escTitle"));
+         gTray.showicon();
+ 
+@@ -383,7 +371,6 @@ function TrayShowTooltip(aMessage)
+ 
+         try {
+ 
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+ ;
+         gTray.settooltipmsg(aMessage);
+ 
+@@ -413,7 +400,6 @@ function TrayChangeMenuItemText(aIndex,
+     if(gTray && gBaseWindow)
+     {
+         try {
+-        netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect")
+         gTray.setmenuitemtext(aIndex,aText);
+         gTray.showicon();
+         } catch(e) {

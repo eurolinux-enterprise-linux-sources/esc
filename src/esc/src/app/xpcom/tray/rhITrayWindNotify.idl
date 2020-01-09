@@ -1,0 +1,10 @@
+#include "nsISupports.idl"
+
+
+[scriptable,uuid(b15301ff-c7e2-4c0d-b9b6-0a974267375d)]
+interface rhITrayWindNotify:nsISupports
+{
+
+    boolean rhTrayWindEventNotify(in unsigned long aEvent,in unsigned long aEventData,in unsigned long aKeyData,in unsigned long aData1,in unsigned long aData2);
+
+};

@@ -1,0 +1,273 @@
+diff -up ./esc/coreconf/Linux3.2.mk.fix13 ./esc/coreconf/Linux3.2.mk
+--- ./esc/coreconf/Linux3.2.mk.fix13	2012-02-20 18:08:55.637187190 -0800
++++ ./esc/coreconf/Linux3.2.mk	2012-02-20 18:09:16.296139174 -0800
+@@ -0,0 +1,35 @@
++# BEGIN COPYRIGHT BLOCK
++# This Program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU General Public License as published by the Free Software
++# Foundation; version 2 of the License.
++#
++# This Program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License along with
++# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
++# Place, Suite 330, Boston, MA 02111-1307 USA.
++#
++# Copyright (C) 2005 Red Hat, Inc.
++# All rights reserved.
++# END COPYRIGHT BLOCK
++
++#
++# Config stuff for Linux 3.2 (ELF)
++#
++
++include $(CORE_DEPTH)/coreconf/Linux.mk
++
++OS_REL_CFLAGS   += -DLINUX2_1
++MKSHLIB         = $(CC) -shared -Wl,-soname -Wl,$(@:$(OBJDIR)/%.so=%.so)
++ifdef BUILD_OPT
++            OPTIMIZER       = -O2
++endif
++
++ifdef MAPFILE
++	MKSHLIB += -Wl,--version-script,$(MAPFILE)
++endif
++PROCESS_MAP_FILE = grep -v ';-' $(LIBRARY_NAME).def | \
++        sed -e 's,;+,,' -e 's; DATA ;;' -e 's,;;,,' -e 's,;.*,;,' > $@
++
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix13 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix13	2012-02-20 18:01:49.522177961 -0800
++++ ./esc/src/app/xpcom/Makefile.sdk	2012-02-20 18:01:49.526177952 -0800
+@@ -35,7 +35,12 @@ ifndef GECKO_BIN_PATH
+ GECKO_BIN_PATH=/usr/lib/xulrunner-1.9pre
+ endif
+ XUL_FRAMEWORK_BIN_PATH=$(GECKO_BIN_PATH)
+-
++ifndef GECKO_IDL_PATH
++GECKO_IDL_PATH=/usr/share/idl/xulrunner-2
++endif
++ifndef PYTHON_BIN_PATH
++PYTHON_BIN=python
++endif
+ 
+ ifeq ($(OS_ARCH),Darwin)
+ ifndef GECKO_SDK_PATH
+@@ -190,13 +195,14 @@ endif
+ all::	export libs
+ 
+ libs:: 
+-	$(GECKO_BIN_PATH)/xpidl -v -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m header rhIKeyNotify.idl
+ 
+-	$(GECKO_BIN_PATH)/xpidl -v -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m typelib rhIKeyNotify.idl
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir /tmp  -o rhIKeyNotify.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhIKeyNotify.idl
++
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir /tmp -o rhIKeyNotify.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhIKeyNotify.idl
+ 
+-	$(GECKO_BIN_PATH)/xpidl -v -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m header rhICoolKey.idl
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir /tmp -o rhICoolKey.h  -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhICoolKey.idl
+ 
+-	$(GECKO_BIN_PATH)/xpidl -v -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m typelib rhICoolKey.idl
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir /tmp -o rhICoolKey.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhICoolKey.idl
+ 
+ ifeq ($(OS_ARCH),Darwin)
+ 	$(CXX)   $(CPPFLAGS)  -c  -o $(OBJECT)  $(GECKO_CONFIG_INCLUDE) $(GECKO_DEFINES) $(GECKO_INCLUDES) $(COOL_INCLUDES) $(CXXFLAGS) $(FILES)
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix13 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix13	2012-02-20 18:01:49.524177956 -0800
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2012-02-20 18:01:49.526177952 -0800
+@@ -98,6 +98,7 @@ static PRLogModuleInfo *coolKeyLog = PR_
+ 
+ rhCoolKey *single = NULL;
+ 
++
+ class CoolKeyShutdownObserver : public nsIObserver
+  {
+  public:
+@@ -364,9 +365,9 @@ SECStatus rhCoolKey::badCertHandler(void
+                           GetTStamp(tBuff,56),err,host,port)
+     );
+ 
+-    PRBool isTemporaryOverride = PR_FALSE;
++    bool isTemporaryOverride = PR_FALSE;
+     PRUint32 overrideBits = 0;
+-    PRBool overrideResult = PR_FALSE;
++    bool overrideResult = PR_FALSE;
+ 
+     // Use the nsICertOverrideService to see if we have
+     // previously trusted this certificate.
+@@ -554,14 +555,14 @@ PRBool rhCoolKey::InitInstance()
+     char *grePath = (char *) GETSTRING(GECKO_BIN_PATH);
+ 
+     
+-    snprintf(xpcom_path,4096,grePath);
++    snprintf(xpcom_path,4096,"%s%s",grePath,"libxpcom.so");
+ 
+     char *lib_name =(char *) XPCOM_LIB_NAME ;
+ 
+   
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::xpcom_path %s \n",GetTStamp(tBuff,56),xpcom_path)); 
+ 
+-    XPCOMGlueStartup(xpcom_path);
++    XPCOMGlueStartup("/usr/lib/xulrunner-2/libxpcom.so");
+ 
+     nssComponent
+     = do_GetService(PSM_COMPONENT_CONTRACTID); 
+@@ -1309,7 +1310,7 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyStatu
+ /* boolean GetCoolKeyIsReallyCoolKey (in unsigned long aKeyType, in string aKeyID); */
+ 
+ 
+-NS_IMETHODIMP rhCoolKey::GetCoolKeyIsReallyCoolKey(PRUint32 aKeyType, const char *aKeyID, PRBool *_retval)
++NS_IMETHODIMP rhCoolKey::GetCoolKeyIsReallyCoolKey(PRUint32 aKeyType, const char *aKeyID, bool *_retval)
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::GetCoolKeyIsReallyCoolKey thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
+@@ -1328,7 +1329,7 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyIsRea
+ }
+ 
+ /* long GetCoolKeyGetAppletVer (in unsigned long aKeyType, in string aKeyID, in boolean aIsMajor); */
+-NS_IMETHODIMP rhCoolKey::GetCoolKeyGetAppletVer(PRUint32 aKeyType, const char *aKeyID, PRBool aIsMajor, PRInt32 *_retval)
++NS_IMETHODIMP rhCoolKey::GetCoolKeyGetAppletVer(PRUint32 aKeyType, const char *aKeyID, bool aIsMajor, PRInt32 *_retval)
+ {
+     char tBuff[56];
+     PR_LOG(coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::GetCoolKeyAppletVer thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
+@@ -1344,7 +1345,7 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyGetAp
+ 
+ /* boolean rhCoolKeyIsEnrolled (in unsigned long aKeyType, in string aKeyID); */
+ 
+-NS_IMETHODIMP rhCoolKey::GetCoolKeyIsEnrolled(PRUint32 aKeyType, const char *aKeyID, PRBool *_retval)
++NS_IMETHODIMP rhCoolKey::GetCoolKeyIsEnrolled(PRUint32 aKeyType, const char *aKeyID, bool *_retval)
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::RhCoolKeyIsEnrolled thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
+@@ -1586,7 +1587,7 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyIssue
+ }
+ 
+ /* boolean SetCoolKeyConfigValue (in string aName, in string aValue); */
+-NS_IMETHODIMP rhCoolKey::SetCoolKeyConfigValue(const char *aName, const char *aValue, PRBool *_retval)
++NS_IMETHODIMP rhCoolKey::SetCoolKeyConfigValue(const char *aName, const char *aValue, bool *_retval)
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("rhCoolKey::SetCoolKeyConfigValue thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
+@@ -1620,7 +1621,7 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyConfi
+ 
+ /* boolean rhCoolKeyRequiresAuthentication (in unsigned long aKeyType, in string aKeyID); */
+ 
+-NS_IMETHODIMP rhCoolKey::GetCoolKeyRequiresAuthentication(PRUint32 aKeyType, const char *aKeyID, PRBool *_retval)
++NS_IMETHODIMP rhCoolKey::GetCoolKeyRequiresAuthentication(PRUint32 aKeyType, const char *aKeyID, bool *_retval)
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::RhCoolKeyRequiresAuthentication thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
+@@ -1640,7 +1641,7 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyRequi
+ 
+ /* boolean rhGetCoolKeyIsAuthenticated (in unsigned long aKeyType, in string aKeyID); */
+ 
+-NS_IMETHODIMP rhCoolKey::GetCoolKeyIsAuthenticated(PRUint32 aKeyType, const char *aKeyID, PRBool *_retval)
++NS_IMETHODIMP rhCoolKey::GetCoolKeyIsAuthenticated(PRUint32 aKeyType, const char *aKeyID, bool *_retval)
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::RhGetCoolKeyIsAuthenticated thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
+@@ -1660,7 +1661,7 @@ NS_IMETHODIMP rhCoolKey::GetCoolKeyIsAut
+ 
+ /* boolean rhAuthenticateCoolKey (in unsigned long aKeyType, in string aKeyID, in string aPIN); */
+ 
+-NS_IMETHODIMP rhCoolKey::AuthenticateCoolKey(PRUint32 aKeyType, const char *aKeyID, const char *aPIN, PRBool *_retval) 
++NS_IMETHODIMP rhCoolKey::AuthenticateCoolKey(PRUint32 aKeyType, const char *aKeyID, const char *aPIN, bool *_retval) 
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLog, PR_LOG_DEBUG, ("%s rhCoolKey::RhAuthenticateCoolKey thread: %p \n",GetTStamp(tBuff,56),PR_GetCurrentThread()));
+diff -up ./esc/src/app/xpcom/tray/Makefile.sdk.fix13 ./esc/src/app/xpcom/tray/Makefile.sdk
+--- ./esc/src/app/xpcom/tray/Makefile.sdk.fix13	2012-02-20 18:01:49.522177961 -0800
++++ ./esc/src/app/xpcom/tray/Makefile.sdk	2012-02-20 18:01:49.526177952 -0800
+@@ -39,6 +39,15 @@ ifndef GECKO_BIN_PATH
+ GECKO_BIN_PATH=/usr/lib/xulrunner-1.9
+ endif
+ 
++ifndef GECKO_IDL_PATH
++GECKO_IDL_PATH=/usr/share/idl/xulrunner-2
++endif
++
++ifndef PYTHON_BIN_PATH
++PYTHON_BIN=python
++endif
++
++
+ ifeq ($(OS_ARCH),Darwin)
+ ifndef GECKO_SDK_PATH
+ GECKO_SDK_PATH =/Users/jmagne/Desktop/gecko-sdk-mac-universal
+@@ -220,13 +229,14 @@ all::	export libs
+ 
+ libs:: 
+ 	echo "PPC_BUILD $(PPC_BUILD)"
+-	$(GECKO_BIN_PATH)/xpidl -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m header rhITray.idl
+ 
+-	$(GECKO_BIN_PATH)/xpidl -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m typelib rhITray.idl
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir=/tmp -o rhITray.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhITray.idl
++
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir=/tmp -o rhITray.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhITray.idl
+ 
+-	$(GECKO_BIN_PATH)/xpidl -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m header rhITrayWindNotify.idl
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/header.py --cachedir=/tmp -o rhITrayWindNotify.h -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE)  rhITrayWindNotify.idl
+ 
+-	$(GECKO_BIN_PATH)/xpidl -I $(GECKO_SDK_PATH)/idl -I $(NSPR_INCLUDE) -m typelib rhITrayWindNotify.idl
++	$(PYTHON_BIN) $(GECKO_SDK_PATH)/bin/typelib.py --cachedir=/tmp -o rhITrayWindNotify.xpt -I $(GECKO_IDL_PATH) -I $(NSPR_INCLUDE) rhITrayWindNotify.idl
+ 
+ ifeq ($(OS_ARCH),Darwin)
+ 	$(CXX)   $(CPPFLAGS)  -c  -o $(OBJECT)  $(GECKO_CONFIG_INCLUDE) $(GECKO_DEFINES) $(GECKO_INCLUDES) $(COOL_INCLUDES) $(CXXFLAGS) $(FILES)
+diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix13 ./esc/src/app/xpcom/tray/rhLinuxTray.cpp
+--- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix13	2012-02-20 18:01:49.512177984 -0800
++++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2012-02-20 18:01:49.526177952 -0800
+@@ -215,7 +215,7 @@ NS_IMETHODIMP rhTray::Show(nsIBaseWindow
+     return NS_OK;
+ }
+ 
+-NS_IMETHODIMP rhTray::IsInitializedAlready(PRBool *_retval)
++NS_IMETHODIMP rhTray::IsInitializedAlready(bool *_retval)
+ {
+     *_retval = 0;
+ 
+@@ -749,7 +749,7 @@ void rhTray::NotifyTrayWindListeners(PRU
+     std::list< nsCOMPtr <rhITrayWindNotify> >::const_iterator it;
+     for(it=gTrayWindNotifyListeners.begin(); it!=gTrayWindNotifyListeners.end(); ++it) {
+ 
+-        PRBool claimed = 0;
++        bool claimed = 0;
+ 
+         PR_LOG( trayLog, PR_LOG_DEBUG, ("%s NotifyTrayWindListeners about to notify \n",GetTStamp(tBuff,56)));
+         ((rhITrayWindNotify *) (*it))->RhTrayWindEventNotify(aEvent,aEventData, aKeyData, aData1, aData2, &claimed);
+diff -up ./esc/src/app/xul/esc/application.ini.fix13 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix13	2012-02-20 18:01:49.523177958 -0800
++++ ./esc/src/app/xul/esc/application.ini	2012-02-20 18:01:49.527177950 -0800
+@@ -25,7 +25,7 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-16
++Version=1.1.0-15
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix13 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix13	2012-02-20 18:01:49.514177980 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2012-02-20 18:01:49.527177950 -0800
+@@ -118,7 +118,7 @@ jsNotify.prototype = {
+      if(!iid.equals(Components.interfaces.rhIKeyNotify) &&
+          !iid.equals(Components.interfaces.nsISupports))
+       {
+-          MyAlert(getBundleString("errorJsNotifyInterface"));
++          //MyAlert(getBundleString("errorJsNotifyInterface"));
+           throw Components.results.NS_ERROR_NO_INTERFACE;
+       }
+       return this;
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix13 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix13	2012-02-20 18:01:49.515177978 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2012-02-20 18:01:49.528177948 -0800
+@@ -49,7 +49,7 @@ jsWindNotify.prototype = {
+      if(!iid.equals(Components.interfaces.rhITrayWindNotify) &&
+          !iid.equals(Components.interfaces.nsISupports))
+       {
+-          MyAlert(getBundleString("errorJsNotifyInterface"));
++          //MyAlert(getBundleString("errorJsNotifyInterface"));
+           throw Components.results.NS_ERROR_NO_INTERFACE;
+       }
+       return this;

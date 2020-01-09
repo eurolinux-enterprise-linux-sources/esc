@@ -1,0 +1,76 @@
+diff -up ./esc/src/app/daemon/manifest.mn.fix8 ./esc/src/app/daemon/manifest.mn
+--- ./esc/src/app/daemon/manifest.mn.fix8	2010-04-15 16:27:07.232078448 -0700
++++ ./esc/src/app/daemon/manifest.mn	2010-04-15 14:24:46.297068110 -0700
+@@ -37,7 +37,7 @@ DEFINES += $(shell pkg-config --cflags x
+ CPPFLAGS		+= $(DEFINES) -g
+ 
+ LDFLAGS += -lstdc++ -L$(CORE_DIST)/$(OBJDIR)/lib -L$(XULRUNNER_LIBS_LDFLAGS)  -lnss3 -lnspr4  -lssl3 -lckyapplet $(shell pkg-config --libs xft) 
+-LDFLAGS +=  -lckymanager -lhttpchunked 
++LDFLAGS +=  -lckymanager -lhttpchunked -lm  -lnss3 -lplc4 -lplds4
+ # MODULE public and private header  directories are implicitly REQUIRED.
+ 
+ CPPSRCS = \
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix8 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix8	2010-04-15 14:45:37.907068106 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2010-04-15 14:46:23.392066709 -0700
+@@ -30,7 +30,7 @@
+ #else
+ #include "nsServiceManagerUtils.h"
+ #endif
+-#include "pipnss/nsICertOverrideService.h"
++#include "nsICertOverrideService.h"
+ #include "nsIPrefBranch.h"
+ #include "nsIPrefService.h"
+ #include "nsCOMPtr.h"
+@@ -41,7 +41,7 @@
+ #include "prlink.h"
+ #include "prthread.h"
+ #include "nscore.h"
+-#include "content/nsCopySupport.h"
++#include "nsCopySupport.h"
+ #include <vector>
+ #include <string>
+ #include <time.h>
+diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix8 ./esc/src/app/xpcom/tray/rhLinuxTray.cpp
+--- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix8	2010-04-15 14:43:35.271068664 -0700
++++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2010-04-15 14:43:48.685066431 -0700
+@@ -21,7 +21,7 @@
+ #include "nsIGenericFactory.h"
+ #include <prlog.h>
+ #include "notifytray.h"
+-#include "intl/nsIStringBundle.h"
++#include "nsIStringBundle.h"
+ #include <gdk/gdkx.h>
+ #include <stdlib.h>
+ 
+diff -up ./esc/src/app/xpcom/tray/rhTray.h.fix8 ./esc/src/app/xpcom/tray/rhTray.h
+--- ./esc/src/app/xpcom/tray/rhTray.h.fix8	2010-04-15 14:44:38.565066710 -0700
++++ ./esc/src/app/xpcom/tray/rhTray.h	2010-04-15 14:45:02.118067548 -0700
+@@ -23,8 +23,8 @@
+ #include "nsEmbedString.h"
+ #include <list>
+ #include "nsCOMPtr.h"
+-#include "widget/nsIBaseWindow.h"
+-#include "widget/nsIWidget.h"
++#include "nsIBaseWindow.h"
++#include "nsIWidget.h"
+ #include <time.h>
+ 
+ extern "C" {
+diff -up ./esc/src/app/xul/esc/application.ini.fix8 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix8	2010-04-15 14:47:59.377066710 -0700
++++ ./esc/src/app/xul/esc/application.ini	2010-04-15 14:51:07.476068385 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-9
++Version=1.1.0-12
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001011
++BuildID=0000001012
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on

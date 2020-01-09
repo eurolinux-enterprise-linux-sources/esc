@@ -1,0 +1,29 @@
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix10 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix10	2011-07-19 03:47:15.264254844 -0700
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2011-07-19 03:47:30.224254842 -0700
+@@ -542,7 +542,7 @@ PRBool rhCoolKey::InitInstance()
+     static const GREVersionRange greVersion = 
+     {
+     "1.9", PR_TRUE,
+-    "2", PR_TRUE
++    "9.9", PR_TRUE
+     };
+ 
+     nsresult rv = GRE_GetGREPathWithProperties(&greVersion, 1, nsnull, 0, xpcom_path, 4096);
+diff -up ./esc/src/app/xul/esc/application.ini.fix10 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix10	2011-07-19 03:42:23.368254822 -0700
++++ ./esc/src/app/xul/esc/application.ini	2011-07-19 03:42:40.531254827 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-13
++Version=1.1.0-15
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001013
++BuildID=0000001015
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on

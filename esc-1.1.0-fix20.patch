@@ -1,0 +1,12 @@
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix20 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix20	2013-11-01 16:54:37.261140406 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2013-11-01 16:55:34.370142195 -0700
+@@ -113,7 +113,7 @@ ifeq ($(OS_ARCH),Linux)
+ CPPFLAGS += -g -fno-rtti \
+                 -DXPCOM_GLUE_USE_NSPR -fno-exceptions \
+                 -fshort-wchar -fPIC -std=gnu++0x  
+-GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib  -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl -L$(GECKO_SDK_PATH)/lib -lxpcomglue_s -lxpcom
++GECKO_LD_LIBS=-L$(GECKO_SDK_PATH)/lib  -lnssutil3 -lnss3 -lcrmf -lssl3 -lsmime3 -lplds4 -lplc4 -lnspr4 -lpthread -ldl -L$(GECKO_SDK_PATH)/lib -lxpcomglue_s
+ endif
+ 
+ ifeq ($(OS_ARCH),WINNT)

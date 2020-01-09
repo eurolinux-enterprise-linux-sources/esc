@@ -1,0 +1,724 @@
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix15 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix15	2012-11-26 14:34:39.963604936 -0800
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2012-11-26 14:34:57.012934189 -0800
+@@ -16,6 +16,7 @@
+  * END COPYRIGHT BLOCK **/
+ 
+ #define FORCE_PR_LOG 1
++#define nsnull NULL
+ #include <stdio.h>
+ #include "rhCoolKey.h"
+ #include "CoolKey.h"
+diff -up ./esc/src/app/xpcom/rhICoolKey.idl.fix15 ./esc/src/app/xpcom/rhICoolKey.idl
+--- ./esc/src/app/xpcom/rhICoolKey.idl.fix15	2012-11-26 14:33:41.730480795 -0800
++++ ./esc/src/app/xpcom/rhICoolKey.idl	2012-11-26 14:34:08.479996487 -0800
+@@ -48,11 +48,11 @@ interface rhICoolKey:nsISupports
+ 
+     void CancelCoolKeyOperation(in unsigned long aKeyType, in string aKeyID);
+ 
+-    void GetAvailableCoolKeys(out PRUint32 count,
++    void GetAvailableCoolKeys(out uint32_t count,
+                      [retval, array, size_is(count)] out string str);
+ 
+      void GetCoolKeyCertNicknames(in unsigned long aKeyType, in string aKeyID,
+-      out PRUint32 count, [retval, array, size_is(count)] out string str);
++      out uint32_t count, [retval, array, size_is(count)] out string str);
+ 
+     
+     unsigned long GetCoolKeyStatus(in unsigned long  aKeyType,in string aKeyID);
+diff -up ./esc/src/app/xpcom/tray/Makefile.sdk.fix15 ./esc/src/app/xpcom/tray/Makefile.sdk
+--- ./esc/src/app/xpcom/tray/Makefile.sdk.fix15	2012-11-21 11:55:24.396959829 -0800
++++ ./esc/src/app/xpcom/tray/Makefile.sdk	2012-11-21 11:55:35.227171392 -0800
+@@ -248,7 +248,7 @@ ifeq ($(OS_ARCH),Linux)
+ 
+ 	$(CXX)   $(CPPFLAGS) -shared -o $(TARGET) $(OBJECT)  $(GECKO_DEFINES) $(GECKO_INCLUDES)  $(GECKO_LDFLAGS) $(COOLKEY_LIBS) 
+ 	chmod +x $(TARGET)
+-	strip $(TARGET)
++	#strip $(TARGET)
+ endif
+ 
+ ifeq ($(OS_ARCH),WINNT)
+diff -up ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix15 ./esc/src/app/xpcom/tray/rhLinuxTray.cpp
+--- ./esc/src/app/xpcom/tray/rhLinuxTray.cpp.fix15	2012-11-21 11:56:16.677981170 -0800
++++ ./esc/src/app/xpcom/tray/rhLinuxTray.cpp	2012-11-26 14:26:03.793664849 -0800
+@@ -290,7 +290,7 @@ HRESULT rhTray::Initialize()
+ 
+     PR_LOG( trayLog, PR_LOG_DEBUG, ("%s rhTray::Initialize  \n",GetTStamp(tBuff,56)));
+     g_set_print_handler(rhTray::TrayPrintHandler);
+-    notify_icon_create_with_image_file(COOLKEY_ICON);
++    notify_icon_create_with_image_file((char *)COOLKEY_ICON);
+  
+     HRESULT res = notify_icon_created_ok(); 
+ 
+@@ -690,7 +690,7 @@ rhITrayWindNotify* rhTray::GetTrayWindNo
+ 
+     PR_LOG( trayLog, PR_LOG_DEBUG, ("%s rhCoolKey::GetNotifyKeyListener:  looking for %p returning NULL. \n",GetTStamp(tBuff,56),listener));
+ 
+-    return nsnull;
++    return NULL;
+ }
+ 
+ int rhTray::GetTrayWindNotifyListSize()
+diff -up ./esc/src/app/xpcom/tray/rhTray.h.fix15 ./esc/src/app/xpcom/tray/rhTray.h
+--- ./esc/src/app/xpcom/tray/rhTray.h.fix15	2012-11-21 11:57:47.827762126 -0800
++++ ./esc/src/app/xpcom/tray/rhTray.h	2012-11-21 11:57:58.304966858 -0800
+@@ -37,7 +37,7 @@ extern "C" {
+         int maxSize = 55;
+         if(aSize < maxSize)
+             return NULL;
+-        char *tFormat = "[%c]";
++        char *tFormat = (char *) "[%c]";
+         time_t tm = time(NULL);
+         struct tm *ptr = localtime(&tm);
+         strftime(aTime ,maxSize ,tFormat,ptr);
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul.fix15 ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul.fix15	2012-11-21 14:23:47.146114600 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul	2012-11-21 14:24:57.057408644 -0800
+@@ -22,6 +22,9 @@
+ <window
+     class="escwindow"
+     id="esc-window"
++    height="500"
++    width="600"
++    persist="width height"
+     onload="ShowAdvancedInfo();"
+     onunload="cleanup();"
+     title="&escTitle;"
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/config.xul.fix15 ./esc/src/app/xul/esc/chrome/content/esc/config.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/config.xul.fix15	2012-11-21 14:25:17.956795502 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/config.xul	2012-11-21 14:25:53.737457832 -0800
+@@ -26,6 +26,7 @@
+     onload="InitializePhoneHomeConfigUI();"
+     width ="650"
+     height= "400"
++    persist="width height"
+     onunload="cleanup();"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ <stringbundle id="esc_strings" src="chrome://esc/locale/esc.properties"/>
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/esc.css.fix15 ./esc/src/app/xul/esc/chrome/content/esc/esc.css
+--- ./esc/src/app/xul/esc/chrome/content/esc/esc.css.fix15	2012-11-21 14:26:08.849737580 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/esc.css	2012-11-21 14:27:06.947813071 -0800
+@@ -334,6 +334,10 @@ tr [COOLKeyPresent="yes"]{
+    border: black solid 4px;
+ }
+ 
++.BorderedBrowser {
++    border: black solid 4px;
++}
++
+ .SelectedRow {
+ 
+     color: white;
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix15 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix15	2012-11-20 16:10:36.281805678 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2012-11-21 14:55:47.392037184 -0800
+@@ -29,6 +29,7 @@ var gAdminPage = 0;
+ var gFactoryMode = 0;
+ var gHiddenPage = 0;
+ var gExternalUI = 0;
++var gErrorAlready = 0;
+ 
+ loadStringBundle();
+ 
+@@ -116,9 +117,10 @@ jsNotify.prototype = {
+   {
+      //  alert("iid: " + iid); 
+      if(!iid.equals(Components.interfaces.rhIKeyNotify) &&
+-         !iid.equals(Components.interfaces.nsISupports))
++         !iid.equals(Components.interfaces.nsISupports) &&
++         !iid.equals(Components.interfaces.nsIClassInfo))
+       {
+-          //MyAlert(getBundleString("errorJsNotifyInterface"));
++          MyAlert(getBundleString("errorJsNotifyInterface"));
+           throw Components.results.NS_ERROR_NO_INTERFACE;
+       }
+       return this;
+@@ -885,7 +887,7 @@ function DoShowAdvancedInfo()
+          textDump += getBundleString("noLogFileOrData");
+     }
+ 
+-    var wnd = window.openDialog("chrome://esc/content/advancedinfo.xul","Info","chrome,centerscreen,width=600,height=500,modal=yes",textDump);
++    var wnd = window.openDialog("chrome://esc/content/advancedinfo.xul","Info","chrome,centerscreen,modal=yes",textDump);
+ 
+ }
+ 
+@@ -1279,7 +1281,8 @@ function DoShowFullEnrollmentUI()
+    }
+    else
+    {
+-       UpdateEnrollmentArea(keyType,keyID,keyInserted,showFullUI);
++     MyAlert(getBundleString("errorPhoneHomeInfo"));
++     window.close();
+    }
+ }
+ 
+@@ -1424,7 +1427,7 @@ function UpdateEnrollmentArea(keyType,ke
+                  HideItem(yes_key_area);
+                  HideItem(enroll_key_message);
+                  HideItem(enrollBtn);
+-                 UpdateESCSize(ESC_ENROLL_WIDTH,ESC_ENROLL_HEIGHT);
++                 UpdateESCSize();
+              }
+          }
+          else
+@@ -1453,7 +1456,7 @@ function UpdateEnrollmentArea(keyType,ke
+ 
+     if(!alreadyEnrolled  && inserted && showExternalUI)
+      {
+-         UpdateESCSize(ESC_ENROLL_WIDTH,ESC_ENROLL_HEIGHT);
++         UpdateESCSize();
+          return;
+      }
+ 
+@@ -1792,9 +1795,73 @@ function InitializeEnrollment()
+   UpdateCoolKeyAvailabilityForEnrollment();
+ }
+ 
++function AdminKeyPressHandler(evt)
++{
++  var newitem = null;
++  var olditem = null;
++  var offset  = 0;
++  var selectedIndex = 0;
++
++  var list = document.getElementById("AdminBindingList");
++  if(!list)
++    return;
++
++  var numRows = list.getRowCount();
++  if(numRows == 0)
++  {
++      return;
++  }
++  list.selectItem(gCurrentSelectedRow);
++  selectedIndex = list.selectedIndex;
++
++  if(selectedIndex == -1)
++  {
++    olditem = list.getItemAtIndex(0);
++    if(olditem) {
++      list.selectItem(olditem);
++      olditem.click();
++    }
++  }
++  selectedIndex = list.selectedIndex;
++  olditem = list.getItemAtIndex(selectedIndex);
++
++  if(evt.keyCode == KeyEvent.DOM_VK_UP) {
++   offset = -1;
++  }
++  if(evt.keyCode == KeyEvent.DOM_VK_DOWN) {
++    offset = 1;
++  }
++
++  if(offset == 0)
++    return;
++
++  if(olditem)  {
++      list.moveByOffset( offset , 1, 0);
++      newitem = list.getItemAtIndex(list.selectedIndex);
++      olditem.blur();
++      if(newitem)
++        newitem.click();
++  }
++
++  var item = null;
++  for( i = 0; i < list.getRowCount(); i ++) {
++      item = list.getItemAtIndex(i);
++
++      if(item && item != gCurrentSelectedRow) {
++          item.setAttribute("class","UnSelectedRow");
++      }
++  }
++}
++
+ function InitializeAdminBindingList()
+ {
+ 
++ var list = document.getElementById("AdminBindingList");
++
++ if(list) {
++   list.addEventListener("keypress", AdminKeyPressHandler, false);
++ }
++
+  gAdminPage = 1;
+ 
+  UpdateAdminBindingListAvailability();
+@@ -1802,8 +1869,7 @@ function InitializeAdminBindingList()
+  DoSetEnrolledBrowserLaunchState(); 
+  DoHandleEnrolledBrowserLaunch();
+ 
+- window.setTimeout('ShowWindow()',250);
+-
++ list.focus();
+ }
+ 
+ //Window related functions
+@@ -1974,12 +2040,18 @@ function SelectESCPage(keyType,keyID,pho
+    var enrollWnd = IsPageWindowPresent(ENROLL_WINDOW);
+    var adminWnd  = IsPageWindowPresent(ADMIN_WINDOW);
+ 
+-   if(keyUninitialized == UNINITIALIZED && !phoneHomeFailed )  //formatted uninitialized card
++   var arr = GetAvailableCoolKeys();
++   var no_launch_external_ui = 0;
++
++    if (arr && arr.length > 1)
++        no_launch_external_ui = 1;
++
++
++   if(keyUninitialized == UNINITIALIZED && !phoneHomeFailed && !no_launch_external_ui )  //formatted uninitialized card
+    {
+        if(enrollWnd)   //Enrollment window is  already up
+        {
+           enrollWnd.focus();
+-          enrollWnd.ShowWindow();
+        }
+        else
+        {
+@@ -2332,12 +2404,14 @@ function UpdateAdminKeyDetailsArea(keyTy
+        }
+        else
+        {
++           DisableItem(enrollbtn);
+            DisableItem(resetpinbtn);
+            DisableItem(formatbtn);
+            if(adminkeymenu)
+            {
+                DisableItem(menu_format);
+                DisableItem(menu_resetpassword);
++               DisableItem(menu_enroll);
+            }
+        }
+ 
+@@ -2762,6 +2836,7 @@ function DoEnrollCoolKey()
+   var tokencode = null;
+   
+   var failed = 0;
++  gErrorAlready = 0;
+ 
+   if (type == "userKey")
+   {
+@@ -2792,12 +2867,13 @@ function DoEnrollCoolKey()
+   {
+      UpdateAdminListRow(keyType,keyID);
+      UpdateAdminKeyDetailsArea(keyType,keyID);
+-     if(!failed)
++     if(!failed && !gErrorAlready)
+      {
+           AdminToggleStatusProgress(1,keyType,keyID);
+           UpdateAdminKeyAreaDetailsLabel(getBundleString("enrollingToken"));
+      }
+   }
++  gErrorAlready = 0;
+ }
+ 
+ function DoCollectPassword(operation)
+@@ -2822,6 +2898,7 @@ function DoResetSelectedCoolKeyPIN()
+   var screennamepwd = null;
+ 
+   var failed = 0;
++  gErrorAlready = 0;
+ 
+   if (GetCoolKeyIsEnrolled(keyType, keyID))
+   {
+@@ -2843,12 +2920,13 @@ function DoResetSelectedCoolKeyPIN()
+      UpdateAdminListRow(keyType,keyID);
+      UpdateAdminKeyDetailsArea(keyType,keyID);
+ 
+-      if(!failed)
++      if(!failed && !gErrorAlready)
+       {
+           AdminToggleStatusProgress(1,keyType,keyID);
+           UpdateAdminKeyAreaDetailsLabel(getBundleString("resettingTokenPIN"));
+       }
+   }
++  gErrorAlready = 0;
+ }
+ 
+ function DoFormatCoolKey(type)
+@@ -2865,6 +2943,7 @@ function DoFormatCoolKey(type)
+   var failed = 0;
+   var globalType = GetCachedTokenType(keyID);
+ 
++  gErrorAlready = 0;
+   if(!type)
+       lType = gKeyEnrollmentType;
+   else
+@@ -2890,12 +2969,13 @@ function DoFormatCoolKey(type)
+   {
+       UpdateAdminListRow(keyType,keyID);
+       UpdateAdminKeyDetailsArea(keyType,keyID);
+-      if(!failed)
++      if(!failed && !gErrorAlready)
+       {
+           AdminToggleStatusProgress(1,keyType,keyID);
+           UpdateAdminKeyAreaDetailsLabel(getBundleString("formatingToken"));
+       }
+   }
++  gErrorAlready = 0;
+ }
+ function DoCancelOperation()
+ {
+@@ -3156,6 +3236,7 @@ function OnCoolKeyStateError(keyType, ke
+      AdminToggleStatusProgress(0,keyType,keyID);
+    }
+ 
++  gErrorAlready = 1;
+   if(!CheckForSecurityMode())
+       MyAlert(typeStr);
+   ClearProgressBar(KeyToProgressBarID(keyType, keyID));
+@@ -3261,9 +3342,73 @@ function refresh()
+   window.resizeBy(0,-1);
+ }
+ 
++//nsIWebProgressListener to oversee the loading of the external UI
++var uiListener = null;
++var esc_enroll_uri = null;
++
++const STATE_START = Components.interfaces.nsIWebProgressListener.STATE_START;
++const STATE_STOP = Components.interfaces.nsIWebProgressListener.STATE_STOP;
++const STATE_IS_DOCUMENT = Components.interfaces.nsIWebProgressListener.STATE_IS_DOCUMENT;
++uiListener =
++{
++    QueryInterface: function(aIID)
++    {
++        if (aIID.equals(Components.interfaces.nsIWebProgressListener) ||
++         aIID.equals(Components.interfaces.nsISupportsWeakReference) ||
++         aIID.equals(Components.interfaces.nsISupports))
++         return this;
++         throw Components.results.NS_NOINTERFACE;
++    },
++
++    onStateChange: function(aWebProgress, aRequest, aFlag, aStatus)
++    {
++        if(aFlag & STATE_START && aFlag & STATE_IS_DOCUMENT)
++        {
++        }
++        if(aFlag & STATE_STOP && aFlag & STATE_IS_DOCUMENT)
++        {
++
++            var url = aWebProgress.DOMWindow.document.URL;
++
++            if(url != esc_enroll_uri)
++            {
++                MyAlert(getBundleString("errorEnrollmentUI"));
++
++                if(uiListener)
++                    aWebProgress.removeProgressListener(uiListener);
++
++                var enrollWnd = IsPageWindowPresent(ENROLL_WINDOW);
++
++                if(enrollWnd)
++                {
++                    enrollWnd.close();
++                }
++            }
++            else
++            {
++                if(uiListener)
++                    aWebProgress.removeProgressListener(uiListener);
++            }
++        }
++    },
++
++    onLocationChange: function(aProgress, aRequest, aURI)
++    {
++    },
++    onProgressChange: function(aWebProgress, aRequest, curSelf, maxSelf, curTot, maxTot)
++    {
++    },
++    onStatusChange: function(aWebProgress, aRequest, aStatus, aMessage)
++    {
++    },
++    onSecurityChange: function(aWebProgress, aRequest, aState)
++    {
++    }
++}
++
+ function loadExternalESCUI()
+ {
+-   var esc_enroll_uri = null;
++    esc_enroll_uri = null;
+ 
+     var keyType= null;
+     var keyID = null;
+@@ -3324,6 +3469,7 @@ function loadExternalESCUI()
+         if(ui_id)
+         {
+             ui_id.setAttribute("src",esc_enroll_uri);
++            ///ui_id.addProgressListener(uiListener,Components.interfaces.nsIWebProgress.NOTIFY_STATE_DOCUMENT);
+             UpdateEnrollmentArea(keyType,keyID,inserted,showFullUI,showExternalUI)
+         }
+ 
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/esc.xul.fix15 ./esc/src/app/xul/esc/chrome/content/esc/esc.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/esc.xul.fix15	2012-11-21 11:14:42.545118881 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/esc.xul	2012-11-21 11:16:21.542042804 -0800
+@@ -147,7 +147,8 @@
+       </hbox>
+   </vbox>
+ 
+-  <iframe id="esc-ui"  flex="1" class="BorderedIFrame" hidden="true"/>
++  <browser id="esc-ui" class="BorderedBrowser" height="725" flex="1" hidden="true" src="" />
++
+   </groupbox>
+   <hbox id = "enrollment_button_box">
+         <spacer flex = "4"/>
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/password.js.fix15 ./esc/src/app/xul/esc/chrome/content/esc/password.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/password.js.fix15	2012-11-21 11:16:28.740186184 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/password.js	2012-11-21 11:18:32.722686536 -0800
+@@ -42,6 +42,21 @@ function doOperation()
+    window.close(); 
+ }
+ 
++//
++// unregister out notify event
++//
++function cleanup()
++{
++    TrayRemoveWindow(null);
++    try {
++      netscape.security.PrivilegeManager.enablePrivilege("UniversalXPConnect");
++      netkey.rhCoolKeyUnSetNotifyCallback(gNotify);
++    } catch(e) {
++     MyAlert(getBundleString("errorUniversalXPConnect")  + e);
++    }
++
++}
++
+ 
+ function GetLocalPINValue()
+ {
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/password.xul.fix15 ./esc/src/app/xul/esc/chrome/content/esc/password.xul
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/security.xul.fix15 ./esc/src/app/xul/esc/chrome/content/esc/security.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/security.xul.fix15	2012-11-21 14:52:14.192045524 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/security.xul	2012-11-21 14:52:57.839863826 -0800
+@@ -26,6 +26,7 @@
+     onload="InitializeSecurityEnrollment()"
+     width ="600"
+     height= "575"
++    persist="width height"
+     onunload="cleanup();OnSecurityPageHidden();"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ 
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/settings.xul.fix15 ./esc/src/app/xul/esc/chrome/content/esc/settings.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/settings.xul.fix15	2012-11-21 14:53:16.829219643 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/settings.xul	2012-11-21 14:53:42.456699662 -0800
+@@ -28,6 +28,7 @@
+     width ="720"
+     height= "415"
+     name="admin"
++    persist="width height"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ 
+      <stringbundle id="esc_strings" src="chrome://esc/locale/esc.properties"/>
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix15 ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js.fix15	2012-11-21 14:54:00.574038897 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/TRAY.js	2012-11-21 14:58:29.722107000 -0800
+@@ -47,9 +47,10 @@ jsWindNotify.prototype = {
+   {
+      //alert("iid: " + iid);
+      if(!iid.equals(Components.interfaces.rhITrayWindNotify) &&
+-         !iid.equals(Components.interfaces.nsISupports))
++         !iid.equals(Components.interfaces.nsISupports) &&
++         !iid.equals(Components.interfaces.nsIClassInfo)
+       {
+-          //MyAlert(getBundleString("errorJsNotifyInterface"));
++          MyAlert(getBundleString("errorJsNotifyInterface"));
+           throw Components.results.NS_ERROR_NO_INTERFACE;
+       }
+       return this;
+@@ -423,6 +424,13 @@ alert("exception " + e);
+    }
+ }
+ 
++//Cleanup this window if ESC.js doesn't do it
++function traycleanup()
++{
++    TrayRemoveWindow(null);
++}
++
++
+ //String bundling related functions
+ 
+ function loadStringBundle()
+diff -up ./esc/src/app/xul/esc/chrome/locale/en-US/esc.properties.fix15 ./esc/src/app/xul/esc/chrome/locale/en-US/esc.properties
+--- ./esc/src/app/xul/esc/chrome/locale/en-US/esc.properties.fix15	2012-11-21 11:21:31.426280759 -0800
++++ ./esc/src/app/xul/esc/chrome/locale/en-US/esc.properties	2012-11-21 11:22:33.427512763 -0800
+@@ -176,6 +176,8 @@ errorSelectKey=Please select a smart car
+ errorEnrolledFirst=Smart card must be enrolled first! Enroll card and try again.
+ enrollmentFor=Enrollment of your 
+ errorNeedKeyForSecMode=Please insert enrolled smart card before attempting secure mode.
++errorEnrollmentUI=Problem loading Enrollment UI, check your network connection, re-insert the card, and try again!
++errorPhoneHomeInfo=Problem loading Phone Home Information, check your network connection, re-insert the card, and try again!
+ wasSuccessful=was successful.
+ pinResetSuccessful=Password Reset was successfull!
+ formatOf=Format of
+diff -up ./esc/src/lib/coolkey/CoolKey.cpp.fix15 ./esc/src/lib/coolkey/CoolKey.cpp
+--- ./esc/src/lib/coolkey/CoolKey.cpp.fix15	2012-11-21 14:58:53.164558727 -0800
++++ ./esc/src/lib/coolkey/CoolKey.cpp	2012-11-21 15:02:47.425039628 -0800
+@@ -1412,7 +1412,7 @@ char *GetTStamp(char *aTime,int aSize)
+     if(aSize < maxSize)
+         return NULL;
+ 
+-    char *tFormat = "[%c]";
++    char *tFormat = (char *) "[%c]";
+     time_t tm = time(NULL);
+     struct tm *ptr = localtime(&tm);
+     strftime(aTime ,maxSize ,tFormat,ptr);
+diff -up ./esc/src/lib/coolkey/CoolKeyHandler.cpp.fix15 ./esc/src/lib/coolkey/CoolKeyHandler.cpp
+--- ./esc/src/lib/coolkey/CoolKeyHandler.cpp.fix15	2012-11-21 15:03:00.069280046 -0800
++++ ./esc/src/lib/coolkey/CoolKeyHandler.cpp	2012-11-21 15:04:00.118420187 -0800
+@@ -1096,7 +1096,7 @@ HRESULT CoolKeyHandler::HttpBeginOpReque
+ 
+     char ascii_port[50];
+     char host_port[200];
+-    char *method = "POST";
++    char *method = (char *) "POST";
+ 
+     if(mCharScreenName && mCharScreenNamePwd)
+     {
+@@ -1131,7 +1131,7 @@ HRESULT CoolKeyHandler::HttpBeginOpReque
+ 
+     string ext_buffer = "";
+ 
+-    char *clientVer = "ESC 1.0.1";
++    char *clientVer = (char *) "ESC 1.0.1";
+     sprintf(buffer,"clientVersion=%s",clientVer);
+ 
+     ext_buffer = buffer;
+diff -up ./esc/src/lib/coolkey/CoolKey_Message.cpp.fix15 ./esc/src/lib/coolkey/CoolKey_Message.cpp
+--- ./esc/src/lib/coolkey/CoolKey_Message.cpp.fix15	2012-11-21 11:25:37.996165274 -0800
++++ ./esc/src/lib/coolkey/CoolKey_Message.cpp	2012-11-21 11:27:42.797605767 -0800
+@@ -560,7 +560,12 @@ void eCKMessage_LOGIN_RESPONSE::encode(s
+ 
+     string lPassword = getStringValue(pKey);
+ 
+-    aOutputVal += sKey + delim1 + lScreenName + delim + pKey + delim1 + lPassword;
++    string ScreenName_encoded, Password_encoded;
++
++    URLEncode_str(lScreenName, ScreenName_encoded);
++    URLEncode_str(lPassword, Password_encoded);
++
++    aOutputVal += sKey + delim1 + ScreenName_encoded + delim + pKey + delim1 + Password_encoded;
+ 
+     eCKMessage::encode(aOutputVal);
+ }
+diff -up ./esc/src/lib/coolkey/NSSManager.cpp.fix15 ./esc/src/lib/coolkey/NSSManager.cpp
+--- ./esc/src/lib/coolkey/NSSManager.cpp.fix15	2012-11-21 15:04:06.329537968 -0800
++++ ./esc/src/lib/coolkey/NSSManager.cpp	2012-11-21 15:04:53.612433763 -0800
+@@ -96,7 +96,7 @@ HRESULT NSSManager::InitNSS(const char *
+         }
+     }
+ 
+-    char *libName = COOLKEY_PKCS11_LIBRARY ;
++    char *libName = (char *) COOLKEY_PKCS11_LIBRARY ;
+ 
+     PR_LOG( coolKeyLogNSS, PR_LOG_DEBUG, ("%s InitNSS: About to try SECMOD_AddNewModule :%s \n",GetTStamp(tBuff,56),libName));
+ 
+@@ -330,8 +330,8 @@ NSSManager::GetKeyCertNicknames( const C
+ 
+     CERTCertNicknames *nicknames =
+     CERT_NicknameStringsFromCertList(certs,
+-                                     NICKNAME_EXPIRED_STRING,
+-                                     NICKNAME_NOT_YET_VALID_STRING);
++                                    (char *) NICKNAME_EXPIRED_STRING,
++                                    (char *) NICKNAME_NOT_YET_VALID_STRING);
+ 
+     char *curName = NULL;
+ 
+diff -up ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp.fix15 ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp
+--- ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp.fix15	2012-11-21 15:05:09.934742670 -0800
++++ ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp	2012-11-21 15:40:49.570037221 -0800
+@@ -35,8 +35,10 @@
+ 
+ static PRLogModuleInfo *coolKeyLogSC = PR_NewLogModule("coolKeySmart");
+ 
++static const PRUint32 COOLKEY_SHUTDOWN_WAIT_INTERVAL = 3;
++
+ SmartCardMonitoringThread::SmartCardMonitoringThread(SECMODModule *aModule)
+-  : mModule(aModule), mThread(NULL)
++  : mModule(aModule), mThread(NULL), mExitThread(NULL)
+ {
+     char tBuff[56];
+     PR_LOG( coolKeyLogSC, PR_LOG_DEBUG, 
+@@ -184,6 +186,9 @@ void SmartCardMonitoringThread::Execute(
+ 
+     } while (1);
+ 
++   PR_LOG( coolKeyLogSC, PR_LOG_DEBUG,
++             ("%s SmartCardMonitoringThread::Execute Leaving thread : \n",GetTStamp(tBuff,56)));
++
+ }
+ 
+ void SmartCardMonitoringThread::Interrupt()
+@@ -195,6 +200,14 @@ void SmartCardMonitoringThread::Interrup
+     if(mThread)
+     {
+         SECStatus rv;
++
++        if (!mExitThread) {
++            mExitThread = PR_CreateThread(PR_SYSTEM_THREAD, ExitTimeout, this,
++                              PR_PRIORITY_NORMAL, PR_GLOBAL_THREAD,
++                              PR_JOINABLE_THREAD, 0);
++        }
++
++
+         rv = SECMOD_CancelWait(mModule);
+         if (rv !=SECSuccess) {
+             PR_LOG( coolKeyLogSC, PR_LOG_DEBUG, 
+@@ -255,3 +268,28 @@ void SmartCardMonitoringThread::LaunchEx
+ {
+     ((SmartCardMonitoringThread*)arg)->Execute();
+ }
++
++void SmartCardMonitoringThread::ExitTimeout(void *arg)
++{
++  char tBuff[56];
++  PR_LOG( coolKeyLogSC, PR_LOG_DEBUG,
++            ("%s SmartCardMonitoringThread::ExitTimeout : \n",GetTStamp(tBuff,56)));
++
++
++  if (arg == NULL) {
++     return;
++  }
++
++  PR_Sleep(PR_SecondsToInterval(COOLKEY_SHUTDOWN_WAIT_INTERVAL));
++
++  PR_LOG( coolKeyLogSC, PR_LOG_DEBUG,
++            ("%s SmartCardMonitoringThread::ExitTimeout : wait is done. \n",GetTStamp(tBuff,56)));
++
++  if(((SmartCardMonitoringThread*)arg)->mThread != NULL)  {
++
++     PR_LOG( coolKeyLogSC, PR_LOG_DEBUG,
++            ("%s SmartCardMonitoringThread::ExitTimeout : Timeout expired while SECMOD_Cancel is hanging, good-bye..! \n",GetTStamp(tBuff,56)));
++
++    _exit(0);
++  }
++}
+diff -up ./esc/src/lib/coolkey/SmartCardMonitoringThread.h.fix15 ./esc/src/lib/coolkey/SmartCardMonitoringThread.h
+--- ./esc/src/lib/coolkey/SmartCardMonitoringThread.h.fix15	2012-11-21 15:14:55.270744772 -0800
++++ ./esc/src/lib/coolkey/SmartCardMonitoringThread.h	2012-11-21 15:16:42.068742060 -0800
+@@ -45,9 +45,11 @@ class SmartCardMonitoringThread
+   void Remove(CoolKeyInfo *info);
+ 
+   static void LaunchExecute(void *arg);
++  static void ExitTimeout(void *arg);
+   
+   SECMODModule *mModule;
+   PRThread* mThread;
++  PRThread* mExitThread;
+   char* mCurrentActivation;
+ };
+ 
+diff -up ./esc/src/lib/notifytray/notifytray.c.fix15 ./esc/src/lib/notifytray/notifytray.c
+--- ./esc/src/lib/notifytray/notifytray.c.fix15	2012-11-21 15:35:54.119380073 -0800
++++ ./esc/src/lib/notifytray/notifytray.c	2012-11-21 15:36:57.948605760 -0800
+@@ -218,7 +218,7 @@ void notify_icon_send_tooltip_msg(const
+     if(!message || !notify)
+         return;
+ 
+-    gchar *msg_title = NULL;
++    const gchar *msg_title = NULL;
+ 
+ 
+     if(!title)

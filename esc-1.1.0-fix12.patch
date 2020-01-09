@@ -1,0 +1,50 @@
+diff -up ./esc/coreconf/Linux3.1.mk.fix12 ./esc/coreconf/Linux3.1.mk
+--- ./esc/coreconf/Linux3.1.mk.fix12	2011-11-28 13:55:27.623816205 -0800
++++ ./esc/coreconf/Linux3.1.mk	2011-11-28 13:56:11.119536737 -0800
+@@ -0,0 +1,35 @@
++# BEGIN COPYRIGHT BLOCK
++# This Program is free software; you can redistribute it and/or modify it under
++# the terms of the GNU General Public License as published by the Free Software
++# Foundation; version 2 of the License.
++#
++# This Program is distributed in the hope that it will be useful, but WITHOUT
++# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
++# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License along with
++# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
++# Place, Suite 330, Boston, MA 02111-1307 USA.
++#
++# Copyright (C) 2005 Red Hat, Inc.
++# All rights reserved.
++# END COPYRIGHT BLOCK
++
++#
++# Config stuff for Linux 3.1 (ELF)
++#
++
++include $(CORE_DEPTH)/coreconf/Linux.mk
++
++OS_REL_CFLAGS   += -DLINUX2_1
++MKSHLIB         = $(CC) -shared -Wl,-soname -Wl,$(@:$(OBJDIR)/%.so=%.so)
++ifdef BUILD_OPT
++            OPTIMIZER       = -O2
++endif
++
++ifdef MAPFILE
++	MKSHLIB += -Wl,--version-script,$(MAPFILE)
++endif
++PROCESS_MAP_FILE = grep -v ';-' $(LIBRARY_NAME).def | \
++        sed -e 's,;+,,' -e 's; DATA ;;' -e 's,;;,,' -e 's,;.*,;,' > $@
++
+diff -up ./esc/src/app/xpcom/rhCoolKey.cpp.fix12 ./esc/src/app/xpcom/rhCoolKey.cpp
+--- ./esc/src/app/xpcom/rhCoolKey.cpp.fix12	2011-11-28 19:29:53.894102752 -0800
++++ ./esc/src/app/xpcom/rhCoolKey.cpp	2011-11-28 19:30:46.003028405 -0800
+@@ -41,7 +41,6 @@
+ #include "prlink.h"
+ #include "prthread.h"
+ #include "nscore.h"
+-#include "nsCopySupport.h"
+ #include <vector>
+ #include <string>
+ #include <time.h>

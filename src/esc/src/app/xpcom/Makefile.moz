@@ -1,0 +1,227 @@
+#
+# This Program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; version 2 of the License.
+#
+# This Program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place, Suite 330, Boston, MA 02111-1307 USA.
+#
+# Copyright (C) 2005 Red Hat, Inc.
+# All rights reserved.
+# ***** END COPYRIGHT BLOCK *****
+
+CORE_DEPTH	= ../../..
+#MOZ_OBJDIR	= $(CORE_DEPTH)/dist/$(OBJDIR)/xulrunner_build
+MOZ_SRCDIR	= $(CORE_DEPTH)/dist/src/mozilla
+DEPTH           = $(MOZ_OBJDIR)
+topsrcdir       = $(MOZ_SRCDIR)
+srcdir          = .
+VPATH           = .
+TOP             = $(MOZ_SRCDIR)
+CORE_DIST	= $(CORE_DEPTH)/dist/$(OBJDIR)
+CORE_INC	= $(CORE_DEPTH)/dist/public
+MDDEPDIR	:= $(OBJDIR)/.deps
+
+NO_DIST_INSTALL	= 1
+
+-include $(MOZ_OBJDIR)/config/autoconf.mk
+
+#XULRUNNER release bundle, taken from ftp site
+
+DEPLOY_OBJDIR           = $(CORE_DEPTH)/dist/$(OBJDIR)/esc_build
+
+XULRUNNER_ZIP_NAME	= xulrunner-1.8.0.4.*.tar.gz 
+ifeq ($(OS_ARCH),WINNT)
+XULRUNNER_ZIP_NAME	= xulrunner-1.8.0.4.*.win32.zip
+endif
+XULRUNNER_BIN_PATH	= $(MOZ_OBJDIR)/dist/xulrunner
+XULRUNNER_EXEC		= xulrunner
+ifeq ($(OS_ARCH), Darwin)
+XULRUNNER_BIN_PATH      = $(MOZ_OBJDIR)/dist/universal/xulrunner/XUL.framework
+XULRUNNER_EXEC          = xulrunner-bin
+XULRUNNER_FRAME_DEST    = ESC.app/Contents/Frameworks/XUL.framework
+XULRUNNER_FRAME_BASE	= ESC.app/Contents/Frameworks
+endif
+
+#DEPLOY_OFFSET=/esc
+DEPLOY_OFFSET=/src
+
+ifeq ($(OS_ARCH),Linux)
+DEPLOY_OFFSET=/src
+DESTDIR=$(MOZ_OBJDIR)/install
+endif
+
+ifeq ($(OS_ARCH), WINNT)
+OS_LIBS			+= crypt32.lib
+CSPSRCS			=  CoolKeyCSP.cpp
+endif
+
+OS_CXXFLAGS     +=  $(HOST_CXXFLAGS)
+
+MODULE		= rhCoolKey
+XPIDL_MODULE	= rhCoolKey
+LIBRARY_NAME	= rhCoolKey
+
+
+CKY_LIB_LDD=
+ifdef CKY_LIB   
+CKY_LIB_LDD	= -L$(CKY_LIB)
+endif
+
+
+ifeq ($(OS_ARCH),WINNT)
+COOLKEY_LIBS	= $(CORE_DIST)/lib/ckymanager.lib $(CORE_DIST)/lib/httpchunked.lib  $(CKY_LIB_LDD)/libckyapplet.lib
+OS_LIBS+= /NODEFAULTLIB:libc.lib
+TESTCPPSRCS	= CoolKeyCSP.cpp
+MOZ_NO_DEBUG_RTL=1
+else
+COOLKEY_LIBS	= -L$(CORE_DIST)/lib  -lckymanager  -lhttpchunked $(CKY_LIB_LDD) -lckyapplet
+endif
+
+ifeq ($(OS_ARCH),Darwin)
+COOLKEY_LIBS	+= -lsystemStubs
+endif
+
+IS_COMPONENT	= 1
+MODULE_NAME	= rhCoolKey
+
+
+# Ensure that the xpcom classes that we build
+# do not export themselves
+DEFINES		+= -DXPCOM_GLUE  $(GECKO_INCLUDES) -I$(CORE_INC)/ckymanager -I$(CORE_INC)/httpchuncked -I./_xpidlgen
+
+
+ifdef ESC_VERSION
+DEFINES += -DESC_VERSION=$(ESC_VERSION)
+endif
+
+REQUIRES	= string \
+		  xpcom \
+		  $(NULL)
+
+CPPSRCS		=		   \
+		rhCoolKey.cpp $(CSPSRCS)	   \
+		$(NULL)
+
+
+XPIDLSRCS	= rhICoolKey.idl rhIKeyNotify.idl
+
+TESTCPPSRCS	= 
+
+CPPSRCS		+= $(TESTCPPSRCS)
+
+INSTALL_STUFF = 
+
+
+XPCOM_EXTRA = $(CORE_DIST)/lib/coolkeypk11.dll
+
+ifeq ($(OS_ARCH),Linux)
+INSTALL_STUFF +=
+endif
+
+-include $(topsrcdir)/config/config.mk
+
+install::
+ifdef DESTDIR
+	$(NSINSTALL) $(DEPLOY_OBJDIR)/esc/* $(DESTDIR)
+	$(NSINSTALL) $(CORE_DIST)/bin/escd $(DESTDIR)
+endif
+all:: export libs 
+
+
+libs::	$(INSTALL_STUFF) rhCoolKey.h 
+	#$(NSINSTALL) $(INSTALL_STUFF) $(DIST)/bin
+	$(NSINSTALL) rhCoolKey.h $(CORE_INC)/include/rhCoolKey
+	
+clean::
+	rm -f Makefile.in
+	rm -rf $(DEPLOY_OBJDIR)
+	rm -rf $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/esc
+ifeq ($(OS_ARCH),Darwin)
+	rm -rf ppc
+	rm -rf i386
+endif
+
+deploy: $(DEPLOY_OBJDIR)
+	echo "deploy! on $(OS_ARCH)"
+	
+# separate libraries linked in.
+EXTRA_DSO_LDOPTS = \
+		$(MOZ_OBJDIR)/dist/lib/$(LIB_PREFIX)xpcomglue.$(LIB_SUFFIX) \
+		$(NSPR_LIBS) \
+		$(NSS_LIBS) \
+		$(COOLKEY_LIBS) \
+		$(NULL)
+
+LIBS            = \
+		$(MOZ_OBJDIR)/dist/$(LIB_PREFIX)xpcomglue.$(LIB_SUFFIX) \
+		$(NSPR_LIBS) \
+		$(NSS_LIBS) \
+		$(COOLKEY_LIBS) \
+		$(NULL)
+
+
+# Needed to resolve __yylex (?)
+ifeq ($(OS_ARCH)$(OS_RELEASE),FreeBSD2)
+LIBS		+= -lpcap
+endif
+
+# Need to link with CoreFoundation on Mac
+ifneq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
+EXTRA_DSO_LDOPTS += \
+		$(TK_LIBS) \
+		$(NULL)
+
+LIBS += \
+		$(TK_LIBS) \
+		$(NULL)
+endif
+
+# Need to fool Mozilla's dependency rules, or it will try to build
+# Makefile from Makefile.in
+Makefile.in:
+	cp Makefile Makefile.in
+	touch Makefile
+
+$(DEPLOY_OBJDIR):
+	echo "Installing!"
+	$(NSINSTALL) ./$(LIB_PREFIX)rhCoolKey$(DLL_SUFFIX) $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/components
+	$(NSINSTALL) ./_xpidlgen/*.xpt $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/components
+
+	echo  "Creating $(DEPLOY_OBJDIR)"
+	mkdir $(DEPLOY_OBJDIR)
+
+	cd $(CORE_DEPTH)/$(DEPLOY_OFFSET)/app/xul/esc; zip -r test.zip * -x *\CVS\* \*.fix*; unzip -d esc test.zip ; rm -f test.zip
+	$(XULRUNNER_BIN_PATH)/$(XULRUNNER_EXEC) --install-app $(CORE_DEPTH)$(DEPLOY_OFFSET)/app/xul/esc/esc  $(DEPLOY_OBJDIR)
+
+ifeq ($(OS_ARCH), Darwin)
+
+	mkdir $(DEPLOY_OBJDIR)/$(XULRUNNER_FRAME_BASE)
+	cp -Rf -v $(XULRUNNER_BIN_PATH) $(DEPLOY_OBJDIR)/$(XULRUNNER_FRAME_DEST)
+#	mkdir $(DEPLOY_OBJDIR)/$(XULRUNNER_FRAME_BASE)/XUL.framework
+
+endif
+	#cp -Rf -v $(XULRUNNER_BIN_PATH) $(DEPLOY_OBJDIR)/$(XULRUNNER_FRAME_DEST)
+
+ifeq ($(OS_ARCH),Linux)
+	tar -xzvf $(MOZ_OBJDIR)/dist/$(XULRUNNER_ZIP_NAME)  -C $(DEPLOY_OBJDIR)/$(XULRUNNER_FRAME_DEST)/esc 
+endif
+ifeq ($(OS_ARCH),WINNT)
+	unzip $(MOZ_OBJDIR)/dist/$(XULRUNNER_ZIP_NAME) -d $(DEPLOY_OBJDIR)/$(XULRUNNER_FRAME_DEST)/esc
+	#cp -f $(XPCOM_EXTRA)  $(DEPLOY_OBJDIR)/ESC/components
+endif
+ifdef DESTDIR
+	$(NSINSTALL) $(DEPLOY_OBJDIR) $(DESTDIR)
+endif
+
+-include $(topsrcdir)/config/rules.mk
+
+ifeq ($(OS_ARCH),WINNT)
+	IMPORT_LIBRARY=
+endif
+

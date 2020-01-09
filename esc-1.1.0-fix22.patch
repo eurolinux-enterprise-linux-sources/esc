@@ -1,0 +1,294 @@
+diff -up ./esc/src/app/xul/esc/application.ini.fix22 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix22	2013-11-27 14:14:24.118638587 -0800
++++ ./esc/src/app/xul/esc/application.ini	2013-11-27 14:14:24.132638588 -0800
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-25
++Version=1.1.0-26
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001025
++BuildID=0000001026
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix22 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix22	2013-11-27 14:14:24.016638584 -0800
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2013-11-27 14:30:07.758668142 -0800
+@@ -57,6 +57,7 @@ const  ESC_SECURITY_URL="esc.security.ur
+ const  ESC_SECURE_URL="esc.secure.url";
+ const  ESC_GLOBAL_PHONE_HOME_URL= "esc.global.phone.home.url";
+ const  ESC_HIDE_FORMAT="esc.hide.format";
++const  ESC_ALLOW_NOTIFICATIONS="esc.allow.notifications";
+ 
+ const  CLEAN_TOKEN = "cleanToken";
+ const  UNINITIALIZED        = 1;
+@@ -76,6 +77,7 @@ const ENROLL_WINDOW      = "esc.xul";
+ const ADMIN_WINDOW       = "settings.xul";
+ const HIDDEN_WINDOW      = "hiddenWindow.xul";
+ const SECURITY_WINDOW    = "security.xul";
++const PHONE_WINDOW       = "config.xul";
+ 
+ 
+ //Log level constants
+@@ -230,10 +232,14 @@ var Status_Messages = new Array(
+ function DoPhoneHome(keyType,keyID)
+ {
+   CoolKeyLogMsg(PR_LOG_ALWAYS,"Attempting to phone home for Key " + keyID); 
++  var allowNotify = null;
+   var callback = function (aResult) {
+ 
+     recordMessage("In DoPhoneHome callback");
+ 
++    var allowNotify = DoCoolKeyGetConfigValue(ESC_ALLOW_NOTIFICATIONS);
++
++
+     var issuer = "";
+     if(aResult == true)
+     {
+@@ -241,7 +247,10 @@ function DoPhoneHome(keyType,keyID)
+         if(!issuer)
+             issuer = getBundleString("unknownIssuer");
+         recordMessage("In DoPhoneHome callback success issuer " + issuer);
+-        TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++
++        if(allowNotify == "yes") {
++            TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++        }
+         LogKeyInfo(keyType,keyID,"Key Inserted ...");
+         UpdateRowWithPhoneHomeData(keyType,keyID);
+         recordMessage("cached issuer " + issuer);
+@@ -262,7 +271,9 @@ function DoPhoneHome(keyType,keyID)
+         if(!issuer)
+             issuer = getBundleString("unknownIssuer");
+         recordMessage("Phone home callback failed , issuer " + issuer);
+-        TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++        if (allowNotify == "yes") {
++            TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++        }
+         LogKeyInfo(keyType,keyID,"Key Inserted ...");
+     }
+   }
+@@ -271,6 +282,7 @@ function DoPhoneHome(keyType,keyID)
+ 
+   var home = DoCoolKeyGetIssuerUrl(keyType,keyID);
+ 
++  //home = null;
+   recordMessage("Returned IssuerURL " + home);
+ 
+   if(IsPhoneHomeCached(keyID) && home)
+@@ -279,7 +291,12 @@ function DoPhoneHome(keyType,keyID)
+ 
+       recordMessage("Phone home info cached...");
+       issuer = GetCoolKeyIssuer(keyType,keyID);
+-      TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++
++      allowNotify = DoCoolKeyGetConfigValue(ESC_ALLOW_NOTIFICATIONS);
++      if (allowNotify == "yes") {
++          TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++      }
++
+       LogKeyInfo(keyType,keyID,"Key Inserted ...");
+ 
+       var launchBrowserURL =  GetCachedEnrolledTokenBrowserURL(keyID);
+@@ -534,7 +551,11 @@ function GetAuthDataFromPopUp(aKeyType,a
+    keyUITable[aKeyID] = aUiData;
+    keyTypeTable[aKeyID] = aKeyType;
+ 
+-   var child =  window.open("chrome://esc/content/GenericAuth.xul", aKeyID, "chrome,centerscreen,width=400,height=250");
++   var child =  window.open("chrome://esc/content/GenericAuth.xul", aKeyID, "chrome,centerscreen,width=400,height=250,dialog");
++
++   if (child) {
++       child.setTimeout("focus()", 1000);
++   }
+  
+    curChildWindow = child; 
+ }
+@@ -1275,7 +1296,7 @@ function UpdateEnrollmentArea(keyType,ke
+ 
+       var numUnenrolledKeys = DoGetNumUnenrolledCoolKeys();
+ 
+-      //alert("inserted " + inserted + " showFulUI " + showFullUI + " showExternalUI " + showExternalUI + " already enrolled " + alreadyEnrolled + " numUnenrolledKeys " + numUnenrolledKeys);
++     // alert("inserted " + inserted + " showFulUI " + showFullUI + " showExternalUI " + showExternalUI + " already enrolled " + alreadyEnrolled + " numUnenrolledKeys " + numUnenrolledKeys);
+ 
+ 
+      var ui_id = document.getElementById("esc-ui");
+@@ -1290,7 +1311,7 @@ function UpdateEnrollmentArea(keyType,ke
+          {
+              if(!numUnenrolledKeys)
+              {
+-               ui_id.setAttribute("src",null);
++                ui_id.setAttribute("src","");
+              }
+              else
+              {
+@@ -1427,14 +1448,19 @@ function UpdateEnrollmentArea(keyType,ke
+          HideItem(no_key_area);
+      }
+ 
++
+     if(!alreadyEnrolled  && inserted && showExternalUI)
+      {
+          UpdateESCSize();
++         gEnrollmentPage.setTimeout("focus();",3500);
+          return;
+      }
+ 
+      if(!showExternalUI)
+          UpdateESCSize();
++
++     gEnrollmentPage.setTimeout("focus();",3500);
++     
+ }
+ 
+ //Evaulate Password Quality
+@@ -2006,7 +2032,7 @@ function SelectESCPage(keyType,keyID,pho
+        break;
+    }
+ 
+-   //alert("SelectESCPage  initialized " + keyUninitialized + " gEnrollmentPage " + gEnrollmentPage + " gFactoryMode " + gFactoryMode + " gHiddenPage " + gHiddenPage);
++   //alert("SelectESCPage  uninitialized " + keyUninitialized + " gEnrollmentPage " + gEnrollmentPage + " gFactoryMode " + gFactoryMode + " gHiddenPage " + gHiddenPage + " phoneHomeFailed " + phoneHomeFailed + " no_launch_external_ui " + no_launch_external_ui);
+ 
+    //Get the primary page windows if present
+ 
+@@ -2022,14 +2048,7 @@ function SelectESCPage(keyType,keyID,pho
+ 
+    if(keyUninitialized == UNINITIALIZED && !phoneHomeFailed && !no_launch_external_ui )  //formatted uninitialized card
+    {
+-       if(enrollWnd)   //Enrollment window is  already up
+-       {
+-          enrollWnd.focus();
+-       }
+-       else
+-       {
+-          launchESC();
+-       }
++       launchESC();
+    }
+    else
+    {
+@@ -2975,8 +2994,9 @@ function OnCoolKeyInserted(keyType, keyI
+ 
+   var uninitialized = 0;
+ 
+-  recordMessage("Key inserted!" + "Window " + IdentifyWindow());
++  var allowNotify = DoCoolKeyGetConfigValue(ESC_ALLOW_NOTIFICATIONS);
+ 
++  recordMessage("Key inserted!" + "Window " + IdentifyWindow());
+   if(gHiddenPage)
+   {
+       TrayShowNotificationIcon();
+@@ -2993,6 +3013,7 @@ function OnCoolKeyInserted(keyType, keyI
+ 
+         gCurrentSelectedRow = row;
+         UpdateEnrollmentArea(keyType,keyID,1);
++
+    }
+ 
+    if(gAdminPage)
+@@ -3017,7 +3038,9 @@ function OnCoolKeyInserted(keyType, keyI
+           if(!issuer )
+               issuer = getBundleString("unknownIssuer");
+ 
+-          TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++          if( allowNotify) {
++              TraySendNotificationMessage(getBundleString("keyInserted"),"\"" + issuer +"\"" + " " + getBundleString("keyInsertedComputer"),3,4000,GetESCNotifyIconPath(keyType,keyID));
++          }
+ 
+       }
+ 
+@@ -3037,6 +3060,8 @@ function OnCoolKeyRemoved(keyType, keyID
+ 
+   var  row = GetRowForKey(keyType, keyID);
+ 
++  var allowNotify = DoCoolKeyGetConfigValue(ESC_ALLOW_NOTIFICATIONS);
++
+   if(gHiddenPage)
+   {
+       if(curChildWindow)
+@@ -3047,7 +3072,9 @@ function OnCoolKeyRemoved(keyType, keyID
+       var issuer = GetCoolKeyIssuer(keyType,keyID);
+       if(!issuer)
+           issuer = getBundleString("unknownIssuer");
+-      TraySendNotificationMessage(getBundleString("keyRemoved"),"\"" + issuer + "\"" + " " + getBundleString("keyRemovedComputer"),1,4000,GetESCNotifyIconPath(keyType,keyID));
++      if (allowNotify == "yes") {
++          TraySendNotificationMessage(getBundleString("keyRemoved"),"\"" + issuer + "\"" + " " + getBundleString("keyRemovedComputer"),1,4000,GetESCNotifyIconPath(keyType,keyID));
++      }
+        LogKeyInfo(keyType,keyID, "Key Removed ...");
+ 
+   }
+@@ -3345,6 +3372,7 @@ uiListener =
+ 
+             if(url != esc_enroll_uri)
+             {
++
+                 MyAlert(getBundleString("errorEnrollmentUI"));
+ 
+                 if(uiListener)
+@@ -3978,17 +4006,24 @@ function launchCONFIG(keyType,keyID)
+         platform = "mac";
+     }
+ 
+-    var wind = null;
++    var wind  = IsPageWindowPresent(PHONE_WINDOW);
+ 
+-    if(platform == "mac")
+-    {
+-        wind = window.openDialog("chrome://esc/content/config.xul",keyID,"chrome,centerscreen,resizable,modal=no");
+-    }
+-    else
+-    {
+-        wind = window.openDialog("chrome://esc/content/config.xul",keyID,"chrome,centerscreen,resizable,modal=yes");
++    if (!wind) {
++        if(platform == "mac")
++        {
++            wind = window.openDialog("chrome://esc/content/config.xul",keyID,"chrome,centerscreen,resizable,modal=no");
++        }
++        else
++        {
++            wind = window.openDialog("chrome://esc/content/config.xul",keyID,"chrome,centerscreen,resizable");
++
++        }
++    } 
+ 
++    if(wind) {
++        wind.setTimeout("focus();",1500);
+     }
++    
+ }
+ 
+ //Launch cert viewer if key has certs
+@@ -4046,12 +4081,12 @@ function launchESC()
+ 
+     if(!enrollWnd)
+     {
+-        var wind = window.open("chrome://esc/content/esc.xul","","chrome,resizable,centerscreen,dialog");
++        enrollWnd = window.open("chrome://esc/content/esc.xul","","chrome,resizable,centerscreen,dialog");
+ 
+     }
+-    else
+-    {
+-        enrollWnd.focus();
++
++    if(enrollWnd) {
++         enrollWnd.setTimeout("focus();",1500);
+     }
+ 
+ }
+diff -up ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js.fix22 ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js
+--- ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js.fix22	2009-03-28 17:54:57.000000000 -0700
++++ ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js	2013-11-27 14:14:24.133638588 -0800
+@@ -29,6 +29,10 @@ pref("esc.tps.message.timeout","90");
+ 
+ pref("esc.windows.do.capi","yes");
+ 
++#Do we allow card notifications? Default no.
++
++pref("esc.allow.notifications", "no");
++
+ 
+ #Sample Security Officer Enrollment UI
+ 

@@ -1,0 +1,365 @@
+/** BEGIN COPYRIGHT BLOCK
+ * This Program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; version 2 of the License.
+ *
+ * This Program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
+ * Place, Suite 330, Boston, MA 02111-1307 USA.
+ *
+ * Copyright (C) 2005 Red Hat, Inc.
+ * All rights reserved.
+ * END COPYRIGHT BLOCK **/
+
+p {
+
+   font-style: italic;
+}
+
+.invisibleWindow {
+
+    visibility: hidden ;
+
+}
+.escwindow   {
+/*background: #ffffff url(bg.jpg) repeat-x; */
+        font-family: arial;
+        font-size: 17pt;
+
+        padding: 10px;
+}
+
+#smallKeyImage {
+
+    list-style-image: url(esc-client-24.png);
+}
+
+#logoImage {
+
+    list-style-image: url(esc.png);
+}
+
+#cylonImage {
+
+    list-style-image: url(progress.7.gif);
+}
+
+#blankKeyImage {
+
+    list-style-image: url(blank-card.png);
+}
+
+#uninitializedKeyImage {
+    list-style-image: url(initializecard.png);
+}
+
+#enrolledKeyImage {
+
+    list-style-image: url(enrolled-key.png);
+}
+
+#passwordNone {
+    list-style-image: url(1-none.png);
+}
+
+* {
+  font-family: "Arial";
+  font-size: 8pt;
+}
+
+.logoBox {
+   margin:  5px;
+   padding: 5px;
+
+}
+
+.outerBoxMedium {
+
+    padding: 5px;
+
+}
+.outerGroupBox {
+    padding: 7px;
+}
+
+.messageText {
+  font-size: 10pt;
+  text-align: justify;
+
+}
+
+.captionText {
+  font-size: 11pt;
+}
+
+.boldMessageText {
+  font-size: 1.3em;
+  font-weight: bold;
+  text-align: justify;
+
+}
+
+.largeLabelText {
+  font-size: 20pt;
+  font-weight:bold;
+}
+
+.mediumLabelText {
+  font-size: 12pt;
+  font-weight:bold;
+  text-align: center;
+}
+
+.headLabelText {
+
+  font-size: 17pt; 
+  font-weight:bold;
+  text-align: center;
+}
+
+.labelText {
+
+  font-size: 8pt;
+  font-weight: bold;
+}
+
+.largeLabelText {
+
+  font-size: 13pt;
+  font-weight:bold;
+}
+
+.rowLabelTextUninit {
+
+  font-size: 8pt;
+  font-weight: bold;
+
+  font-style: italic;
+
+}
+
+.rowLabelText {
+  font-size: 8pt;
+  font-weight: normal;
+}
+
+.headerText {
+  font-size: 12pt;
+  font-weight: bold; 
+}
+
+.buttonText {
+  font-size: 10pt;
+}
+
+.verticalSpacer {
+
+    min-height: 2.0em;
+
+
+}
+
+.progressMeter {
+   margin: 4px;
+   width: 12px;
+}
+
+.verticalSpacerShort {
+   min-height: 1em;
+}
+
+
+.horSpacerShort {
+
+    min-width: 2em;
+}
+
+.horSpacerVeryShort {
+    min-width: 1em;
+}
+
+.authTitleText {
+
+   text-align: left;
+   font-weight: bold;
+   font-size: 13pt;
+
+}
+
+.authDescText {
+   text-align: left;
+   font-size: 10pt;
+   font-weight: lighter;
+
+}
+
+.titleText {
+  font-family: "Arial";
+  font-size: 10pt;
+  font-weight: bolder
+}
+
+.bodyText {
+  font-family: "Arial";
+  font-size: 8pt;
+}
+
+.linkText {
+  font-family: "Arial";
+  font-size: 1.2em;
+}
+
+#BindingTable {
+  background-color: #ffffff ;
+  font-size: 7pt;
+}
+
+#BindingTable th {
+  color: rgb(0, 0, 0);
+  background-color:  #fffffe;
+  font-size: 7pt;
+}
+
+#BindingTable tr {
+  background-color: #fffffe;
+  font-size: 7pt;
+}
+
+tr [COOLKeyPresent="yes"]{
+  background-color: rgb(255, 0, 0);
+}
+
+.cylon {
+  font-size: 4pt;
+  position: relative;
+  border: 1px solid rgb(60, 60, 60);
+  background-color: #ffffff;
+}
+
+.cylonHBox {
+
+  width: 200px; 
+  height: 20px; 
+
+}
+
+.cylonEye {
+  font-weight: bold; 
+  font-size: 4pt;
+}
+
+#statusMsg {
+  font-weight: bold;
+}
+
+.ProgressMeter {
+  position: relative;
+  padding: 1px;
+  border: 1px solid rgb(60, 60, 60);
+  background-color: #ffffff;
+  text-align: center;
+}
+
+.ProgressBar {
+  position: absolute;
+  z-index: 0;
+  top: 0px;
+  left: 0px;
+  border-right: 1px solid rgb(60, 60, 60);
+  background-color: rgb(0, 128, 192);
+  margin: 0px;
+}
+
+.ProgressBarStatus {
+  position: relative;
+  z-index: 10;
+  margin: 0px;
+  padding: 0px;
+
+}
+
+.COOLHeaderText {
+  font-family: "Arial";
+  font-size: 17pt;
+  font-weight: bold;
+  vertical-align: middle;
+}
+                                                                                
+.ContentTable {
+  background-color: #ffffff;
+  margin: 0px;
+}
+                                                                                
+* {
+  font-family: "Arial";
+  font-size: 8pt;
+}
+                                                                                
+                                                                                
+                                                                                
+.TableTitle {
+  font-size: 12pt;
+  font-weight: bold;
+}
+
+.PageHeader {
+  width: 100%;
+  border-bottom: solid black 1px;
+  vertical-align: middle;
+  background-color: #ffffff;
+}
+
+.DiagnosicsTextBox {
+
+   width: 600px;
+   height: 725px;
+   border: black solid 4px;
+
+}
+
+.BorderedIFrame {
+
+    width:  600px;
+    height: 725px;
+    border: black solid 4px;
+}
+
+.BorderedIFrameShort {
+   width: 600px;
+   height: 500px;
+   border: black solid 4px;
+}
+
+.SelectedRow {
+
+    color: white;
+    background-color: #0033CC;
+
+}
+
+.UnSelectedRow {
+
+    color: black;
+    background-color:  #ffffff;
+
+}
+
+.mediumButton {
+  width: 100px;
+}
+
+.largeWideBox {
+
+ min-width: 42em;
+
+}
+
+.mediumWideBox {
+
+ min-width: 18em;
+
+}

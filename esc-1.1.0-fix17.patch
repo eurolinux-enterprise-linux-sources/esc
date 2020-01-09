@@ -1,0 +1,188 @@
+diff -up ./esc/src/app/xpcom/Makefile.sdk.fix17 ./esc/src/app/xpcom/Makefile.sdk
+--- ./esc/src/app/xpcom/Makefile.sdk.fix17	2011-08-13 13:33:22.974548156 -0700
++++ ./esc/src/app/xpcom/Makefile.sdk	2011-08-13 13:33:35.051550866 -0700
+@@ -205,7 +205,7 @@ ifeq ($(OS_ARCH),Linux)
+ 
+ 	$(CXX)   $(CPPFLAGS) -shared -o $(TARGET) $(OBJECT)  $(GECKO_DEFINES) $(GECKO_INCLUDES)  $(GECKO_LDFLAGS) $(COOL_LDFLAGS)
+ 	chmod +x $(TARGET)
+-	strip $(TARGET)
++	#strip $(TARGET)
+ endif
+ 
+ ifeq ($(OS_ARCH),WINNT)
+diff -up ./esc/src/app/xpcom/tray/Makefile.sdk.fix17 ./esc/src/app/xpcom/tray/Makefile.sdk
+--- ./esc/src/app/xpcom/tray/Makefile.sdk.fix17	2011-08-13 13:35:22.080554465 -0700
++++ ./esc/src/app/xpcom/tray/Makefile.sdk	2011-08-13 13:36:39.999520487 -0700
+@@ -238,7 +238,7 @@ ifeq ($(OS_ARCH),Linux)
+ 
+ 	$(CXX)   $(CPPFLAGS) -shared -o $(TARGET) $(OBJECT)  $(GECKO_DEFINES) $(GECKO_INCLUDES)  $(GECKO_LDFLAGS) $(COOLKEY_LIBS) 
+ 	chmod +x $(TARGET)
+-	strip $(TARGET)
++	#strip $(TARGET)
+ endif
+ 
+ ifeq ($(OS_ARCH),WINNT)
+diff -up ./esc/src/app/xul/esc/application.ini.fix17 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix17	2011-08-13 13:37:29.944522275 -0700
++++ ./esc/src/app/xul/esc/application.ini	2011-08-13 13:37:44.358721437 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-21
++Version=1.1.0-22
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001021
++BuildID=0000001022
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul.fix17 ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul.fix17	2011-08-13 13:38:47.682520306 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/advancedinfo.xul	2011-08-13 13:39:00.357719081 -0700
+@@ -22,6 +22,9 @@
+ <window
+     class="escwindow"
+     id="esc-window"
++    height="500"
++    width="600"
++    persist="width height"
+     onload="ShowAdvancedInfo();"
+     onunload="cleanup();"
+     title="&escTitle;"
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/config.xul.fix17 ./esc/src/app/xul/esc/chrome/content/esc/config.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/config.xul.fix17	2011-08-13 13:39:38.204520989 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/config.xul	2011-08-13 13:39:49.615526829 -0700
+@@ -26,6 +26,7 @@
+     onload="InitializePhoneHomeConfigUI();"
+     width ="650"
+     height= "400"
++    persist="width height"
+     onunload="cleanup();"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ <stringbundle id="esc_strings" src="chrome://esc/locale/esc.properties"/>
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix17 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix17	2011-08-13 13:40:36.324770758 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2011-08-13 13:40:47.351522672 -0700
+@@ -886,7 +886,7 @@ function DoShowAdvancedInfo()
+          textDump += getBundleString("noLogFileOrData");
+     }
+ 
+-    var wnd = window.openDialog("chrome://esc/content/advancedinfo.xul","Info","chrome,centerscreen,width=600,height=500,modal=yes",textDump);
++    var wnd = window.openDialog("chrome://esc/content/advancedinfo.xul","Info","chrome,centerscreen,modal=yes",textDump);
+ 
+ }
+ 
+@@ -1426,7 +1426,7 @@ function UpdateEnrollmentArea(keyType,ke
+                  HideItem(yes_key_area);
+                  HideItem(enroll_key_message);
+                  HideItem(enrollBtn);
+-                 UpdateESCSize(ESC_ENROLL_WIDTH,ESC_ENROLL_HEIGHT);
++                 UpdateESCSize();
+              }
+          }
+          else
+@@ -1455,7 +1455,7 @@ function UpdateEnrollmentArea(keyType,ke
+ 
+     if(!alreadyEnrolled  && inserted && showExternalUI)
+      {
+-         UpdateESCSize(ESC_ENROLL_WIDTH,ESC_ENROLL_HEIGHT);
++         UpdateESCSize();
+          return;
+      }
+ 
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/esc.xul.fix17 ./esc/src/app/xul/esc/chrome/content/esc/esc.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/esc.xul.fix17	2011-08-13 13:41:49.310550159 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/esc.xul	2011-08-13 13:42:02.040520050 -0700
+@@ -26,6 +26,7 @@
+     onload="InitializeEnrollment()"
+     width ="600"
+     height= "350"
++    persist="width height"
+     onunload="cleanup()"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ 
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/security.xul.fix17 ./esc/src/app/xul/esc/chrome/content/esc/security.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/security.xul.fix17	2011-08-13 13:42:57.452770622 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/security.xul	2011-08-13 13:43:18.742579672 -0700
+@@ -26,6 +26,7 @@
+     onload="InitializeSecurityEnrollment()"
+     width ="600"
+     height= "575"
++    persist="width height"
+     onunload="cleanup();OnSecurityPageHidden();"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ 
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/settings.xul.fix17 ./esc/src/app/xul/esc/chrome/content/esc/settings.xul
+--- ./esc/src/app/xul/esc/chrome/content/esc/settings.xul.fix17	2011-08-13 13:44:03.868520449 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/settings.xul	2011-08-13 13:44:18.797563330 -0700
+@@ -27,6 +27,7 @@
+     onunload="cleanup()"
+     width ="720"
+     height= "415"
++    persist="width height"
+     name="admin"
+     xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+ 
+diff -up ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js.fix17 ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js
+--- ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js.fix17	2011-08-13 13:45:52.482520529 -0700
++++ ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js	2011-08-13 13:46:07.326604960 -0700
+@@ -42,8 +42,11 @@ pref("esc.windows.do.capi","yes");
+ 
+ pref("esc.hide.format","no");
+ 
++#Decide when to disable token password prompt in ESC UI
++
++#pref("esc.disable.password.prompt","no");
+ 
+ #Use this if you absolutely want a global phone home url for all tokens
+ #Not recommended!
+ 
+-#pref("esc.global.phone.home.url","http:/test.host.com:7888/cgi-bin/home/index.cgi");
++#pref("esc.global.phone.home.url","http://test.host.com:7888/cgi-bin/home/index.cgi");
+diff -up ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp.fix17 ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp
+--- ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp.fix17	2011-08-13 13:48:35.392771083 -0700
++++ ./esc/src/lib/coolkey/SmartCardMonitoringThread.cpp	2011-08-13 13:49:23.146531832 -0700
+@@ -32,6 +32,8 @@
+ 
+ static PRLogModuleInfo *coolKeyLogSC = PR_NewLogModule("coolKeySmart");
+ 
++static const PRUint32 COOLKEY_SHUTDOWN_WAIT_INTERVAL = 3;
++
+ SmartCardMonitoringThread::SmartCardMonitoringThread(SECMODModule *aModule)
+   : mModule(aModule), mThread(NULL), mExitThread(NULL)
+ {
+@@ -202,6 +204,7 @@ void SmartCardMonitoringThread::Interrup
+                               PR_JOINABLE_THREAD, 0);
+         }
+ 
++
+         rv = SECMOD_CancelWait(mModule);
+         if (rv !=SECSuccess) {
+             PR_LOG( coolKeyLogSC, PR_LOG_DEBUG, 
+@@ -274,9 +277,13 @@ void SmartCardMonitoringThread::ExitTime
+   char tBuff[56];
+   PR_LOG( coolKeyLogSC, PR_LOG_DEBUG,
+             ("%s SmartCardMonitoringThread::ExitTimeout : \n",GetTStamp(tBuff,56)));
++  
++
++  if (arg == NULL) {
++     return;
++  }
+ 
+-  PRUint32 wait_to_exit = 3;
+-  PR_Sleep(PR_SecondsToInterval(wait_to_exit));
++  PR_Sleep(PR_SecondsToInterval(COOLKEY_SHUTDOWN_WAIT_INTERVAL));
+ 
+   PR_LOG( coolKeyLogSC, PR_LOG_DEBUG,
+             ("%s SmartCardMonitoringThread::ExitTimeout : wait is done. \n",GetTStamp(tBuff,56)));
+@@ -286,6 +293,6 @@ void SmartCardMonitoringThread::ExitTime
+      PR_LOG( coolKeyLogSC, PR_LOG_DEBUG,
+             ("%s SmartCardMonitoringThread::ExitTimeout : Timeout expired while SECMOD_Cancel is hanging, good-bye..! \n",GetTStamp(tBuff,56)));
+ 
+-     exit(0);
++    _exit(0);
+   }
+ }

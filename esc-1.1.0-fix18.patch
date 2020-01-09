@@ -1,0 +1,57 @@
+diff -up ./esc/src/app/xul/esc/application.ini.fix18 ./esc/src/app/xul/esc/application.ini
+--- ./esc/src/app/xul/esc/application.ini.fix18	2011-10-13 18:12:37.087745378 -0700
++++ ./esc/src/app/xul/esc/application.ini	2011-10-13 18:12:56.591542803 -0700
+@@ -25,11 +25,11 @@ Vendor=RedHat
+ Name=ESC
+ ;
+ ; This field specifies your application's version.  This field is optional.
+-Version=1.1.0-22
++Version=1.1.0-23
+ ;
+ ; This field specifies your application's build ID (timestamp).  This field is
+ ; required.
+-BuildID=0000001022
++BuildID=0000001023
+ ;
+ ; This ID is just an example.  Every XUL app ought to have it's own unique ID.
+ ; You can use the microsoft "guidgen" or "uuidgen" tools, or go on
+diff -up ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix18 ./esc/src/app/xul/esc/chrome/content/esc/ESC.js
+--- ./esc/src/app/xul/esc/chrome/content/esc/ESC.js.fix18	2011-10-13 18:13:09.182745637 -0700
++++ ./esc/src/app/xul/esc/chrome/content/esc/ESC.js	2011-10-13 18:13:32.811495220 -0700
+@@ -1869,8 +1869,6 @@ function InitializeAdminBindingList()
+  DoHandleEnrolledBrowserLaunch();
+ 
+  
+- window.setTimeout('ShowWindow()',250);
+-
+  list.focus();
+ 
+ }
+@@ -2054,7 +2052,6 @@ function SelectESCPage(keyType,keyID,pho
+        if(enrollWnd)   //Enrollment window is  already up
+        {
+           enrollWnd.focus();
+-          enrollWnd.ShowWindow();
+        }
+        else
+        {
+@@ -3053,7 +3050,6 @@ function OnCoolKeyInserted(keyType, keyI
+ 
+       }
+ 
+-      ShowAllWindows();
+       if(!CheckForSecurityMode())
+       {
+           SelectESCPage(keyType,keyID,1 - phoneHomeSuccess);
+diff -up ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js.fix18 ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js
+--- ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js.fix18	2011-10-13 18:14:16.221745914 -0700
++++ ./esc/src/app/xul/esc/defaults/preferences/esc-prefs.js	2011-10-13 18:14:47.681767599 -0700
+@@ -36,7 +36,7 @@ pref("esc.windows.do.capi","yes");
+ 
+ #Sample Security Officer Workstation UI
+ 
+-#pref("esc.security.url","https://dhcp-170.sjc.redhat.com:7889/cgi-bin/sow/welcome.cgi");
++#pref("esc.security.url","https://test.host.com:7889/cgi-bin/sow/welcome.cgi");
+ 
+ #Hide the format button or not.
+ 

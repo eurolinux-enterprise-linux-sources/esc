@@ -1,6 +1,6 @@
 Name: esc 
 Version: 1.1.0
-Release: 37%{?dist} 
+Release: 40%{?dist} 
 Summary: Enterprise Security Client Smart Card Client
 License: GPL+
 URL: http://directory.fedoraproject.org/wiki/CoolKey 
@@ -43,6 +43,8 @@ Patch24: esc-1.1.0-fix24.patch
 Patch25: esc-1.1.0-fix25.patch
 Patch26: esc-1.1.0-fix26.patch
 Patch27: esc-1.1.0-fix27.patch
+Patch28: esc-1.1.0-fix28.patch
+Patch29: esc-1.1.0-fix29.patch
 
 BuildRequires: doxygen fontconfig-devel freetype-devel >= 2.1
 BuildRequires: glib2-devel libIDL-devel atk-devel gtk2-devel libjpeg-devel
@@ -124,6 +126,8 @@ cryptographic smartcards.
 %patch25 -p1 -b .fix25
 %patch26 -p1 -b .fix26
 %patch27 -p1 -b .fix37
+%patch28 -p1 -b .fix28
+%patch29 -p1 -b .fix29
 
 r=$(uname -r | sed -e 's/\(^[^.]*\.[^.]*\).*/\1/')
 [ -f esc/coreconf/Linux$r.mk ] || ln -s Linux3.5.mk esc/coreconf/Linux$r.mk
@@ -274,6 +278,12 @@ if [ -x %{_bindir}/gtk-update-icon-cache ]; then
 fi
 
 %changelog
+* Fri Jan 19 2018 Jack Magne <jmagne@redhat.com> - 1.1.0-40
+- Resolves: Bug #1466949, Relate: Bug #1523946 - [ppc64] ld switch to relro breaks GDB. This caused an rpmdiff failure.
+* Mon Jan 08 2018 Jack Magne <jmagne@redhat.com> - 1.1.0-39
+- Resolves: Bug #1466949 - esc created .redhat directory fails STIG umask check, fixed corner case.
+* Thu Nov 02 2017 Jack Magne <jmagne@redhat.com> - 1.1.0-38
+- Resolves: Bug #1466949 - esc created .redhat directory fails STIG umask check
 * Tue Jun 28 2016 Jack Magne <jmagne@redhat.com> - 1.1.0-37
 - Resolves: Bug #885898 - ESC incorrectly display Issuer information for a CAC smart card
 - Resolves: Bug 1070802 - missing -fstack-protector-strong

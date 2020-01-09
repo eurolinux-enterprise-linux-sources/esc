@@ -1,0 +1,13 @@
+diff -up ./esc/rpm/esc.fix29 ./esc/rpm/esc
+--- ./esc/rpm/esc.fix29	2018-01-08 12:06:42.346885111 -0800
++++ ./esc/rpm/esc	2018-01-08 12:06:45.450865866 -0800
+@@ -105,6 +105,9 @@ then
+     mkdir -p  $ESC_PROFILE_BASE
+     chmod  $ESC_PROFILE_PERMS $REDHAT_BASE
+     chmod  $ESC_PROFILE_PERMS $ESC_PROFILE_BASE
++else
++    chmod  -R  $ESC_PROFILE_PERMS $REDHAT_BASE
++    chmod  -R  $ESC_PROFILE_PERMS $ESC_PROFILE_BASE
+ fi
+ 
+ cd $ESC_PATH
